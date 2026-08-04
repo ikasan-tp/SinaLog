@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* ==========================================================
+   シナログ デザイントークン
+   htmlモックアップ(index.html等)で確立した配色をそのまま移植。
+   [data-theme] と [data-accent] で上書きしてテーマ切替に対応する。
+   ========================================================== */
+:root {
+  --bg: #F7F6F3;
+  --panel: #FFFFFF;
+  --line: #E3E0D8;
+  --line-strong: #CFCABB;
+  --ink: #262420;
+  --ink-sub: #6B675E;
+  --ink-faint: #9C978A;
+
+  --accent: #7A2430;
+  --accent-bg: #F7EAE9;
+  --accent-hover: #661D28;
+
+  --tag-bg: #EFEAE0;
+  --tag-ink: #5A5548;
+  --star: #C9962F;
+  --link: #3E5C4E;
+  --ok: #3E5C4E;
+  --ok-bg: #E9EFEA;
+}
+
+/* ダークテーマ (data-theme="dark" を <html> に付与) */
+[data-theme="dark"] {
+  --bg: #16151A;
+  --panel: #1E1C22;
+  --line: #302E36;
+  --line-strong: #454249;
+  --ink: #EDEAE4;
+  --ink-sub: #B5B0A8;
+  --ink-faint: #837E78;
+
+  --accent-bg: #2A1B1E;
+  --ok-bg: #1B2621;
+  --tag-bg: #2A2830;
+  --tag-ink: #C7C2B8;
+}
+
+/* アクセントカラー(テーマカラー)のバリエーション
+   アバターピッカーと同じ8色パレットをそのまま利用する。
+   <html data-accent="teal"> のように指定すると --accent が切り替わる。 */
+[data-accent="wine"]      { --accent: #7A2430; --accent-hover: #661D28; --accent-bg: #F7EAE9; }
+[data-accent="forest"]    { --accent: #3E5C4E; --accent-hover: #324B3F; --accent-bg: #E9EFEA; }
+[data-accent="navy"]      { --accent: #2E4A6B; --accent-hover: #253C57; --accent-bg: #E8EDF3; }
+[data-accent="amber"]     { --accent: #8A5A1E; --accent-hover: #714A19; --accent-bg: #F3EADC; }
+[data-accent="violet"]    { --accent: #5B3A6B; --accent-hover: #4A2F57; --accent-bg: #EFE7F2; }
+[data-accent="teal"]      { --accent: #2E6B6B; --accent-hover: #255757; --accent-bg: #E5EFEF; }
+[data-accent="gray"]      { --accent: #6B675E; --accent-hover: #57534B; --accent-bg: #ECEAE6; }
+[data-accent="terracotta"]{ --accent: #B0632E; --accent-hover: #8F5025; --accent-bg: #F5E9E0; }
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-sub: var(--ink-sub);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
+  --color-accent-bg: var(--accent-bg);
+  --color-accent-hover: var(--accent-hover);
+  --color-tag-bg: var(--tag-bg);
+  --color-tag-ink: var(--tag-ink);
+  --color-star: var(--star);
+  --color-link: var(--link);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --font-sans: var(--font-noto-sans-jp);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* テーマ切替時のちらつき防止 */
+html {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}

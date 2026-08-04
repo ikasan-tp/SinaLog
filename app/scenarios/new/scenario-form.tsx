@@ -1,0 +1,344 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { createScenario, type CreateScenarioState } from "./actions";
+import { TAG_GROUPS, SUPPLEMENTS } from "@/lib/content-taxonomy";
+
+type OgpResult = { title: string; thumbnailUrl: string; description: string };
+type FetchStatus = "idle" | "loading" | "success" | "error";
+
+const initialState: CreateScenarioState = {};
+
+export function ScenarioForm() {
+  const [state, formAction, isPending] = useActionState(createScenario, initialState);
+
+  const [distributionUrl, setDistributionUrl] = useState("");
+  const [fetchStatus, setFetchStatus] = useState<FetchStatus>("idle");
+  const [fetchError, setFetchError] = useState("");
+  const [ogp, setOgp] = useState<OgpResult | null>(null);
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedSupplements, setSelectedSupplements] = useState<Set<string>>(new Set());
+
+  async function handleFetchOgp() {
+    if (!distributionUrl) return;
+    setFetchStatus("loading");
+    setFetchError("");
+
+    try {
+      const res = await fetch("/api/fetch-ogp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: distributionUrl }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFetchStatus("error");
+        setFetchError(data.error ?? "取得できませんでした。");
+        return;
+      }
+
+      setOgp(data);
+      setFetchStatus("success");
+      if (data.title) setTitle(data.title);
+      if (data.description) setDescription(data.description);
+    } catch {
+      setFetchStatus("error");
+      setFetchError("通信エラーが発生しました。");
+    }
+  }
+
+  function toggle(set: Set<string>, setSet: (s: Set<string>) => void, value: string) {
+    const next = new Set(set);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    setSet(next);
+  }
+
+  return (
+    <form action={formAction} className="space-y-5">
+      {/* 頒布ページURL & 自動取得 */}
+      <section className="rounded-xl border border-line bg-panel p-7">
+        <h2 className="mb-1 text-[15px] font-bold">頒布ページURL</h2>
+        <p className="mb-4 text-xs text-ink-faint">
+          BOOTHなどの頒布ページURLを貼り付けてください。対応外のサイトの場合は手動で入力できます。
+        </p>
+
+        <div className="flex gap-2.5">
+          <input
+            type="url"
+            value={distributionUrl}
+            onChange={(e) => setDistributionUrl(e.target.value)}
+            placeholder="https://example.booth.pm/items/1234567"
+            className="flex-1 rounded-md border border-line-strong px-3.5 py-2.5 text-sm outline-none focus:border-accent"
+          />
+          <button
+            type="button"
+            onClick={handleFetchOgp}
+            disabled={!distributionUrl || fetchStatus === "loading"}
+            className="whitespace-nowrap rounded-md bg-accent px-5 text-[13px] text-white disabled:opacity-50"
+          >
+            {fetchStatus === "loading" ? "取得中…" : "情報を取得"}
+          </button>
+        </div>
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-faint">
+          画像は頒布ページから直接参照します（コピー・保存は行いません）
+        </p>
+
+        {fetchStatus === "success" && ogp && (
+          <div className="mt-4 flex gap-4 rounded-lg border border-ok-bg bg-ok-bg p-4">
+            {ogp.thumbnailUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ogp.thumbnailUrl}
+                alt=""
+                className="h-24 w-24 flex-shrink-0 rounded-md object-cover"
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-ok">
+                取得できました。内容を確認し、必要であれば下の項目を修正してください
+              </p>
+              <p className="truncate text-sm font-bold">{ogp.title}</p>
+            </div>
+          </div>
+        )}
+
+        {fetchStatus === "error" && (
+          <div className="mt-4 rounded-lg border border-line-strong bg-bg p-4 text-[12px] text-ink-sub">
+            {fetchError}　手動で下の項目に入力してください。
+          </div>
+        )}
+      </section>
+
+      {/* シナリオ情報 */}
+      <section className="rounded-xl border border-line bg-panel p-7">
+        <h2 className="mb-1 text-[15px] font-bold">シナリオ情報</h2>
+        <p className="mb-4 text-xs text-ink-faint">
+          タイトル・価格・頒布元以外は空欄のまま登録できます。後から誰でも補完できるので、詳細が分からない場合は無理に埋めなくて大丈夫です。
+        </p>
+
+        <input type="hidden" name="thumbnailUrl" value={ogp?.thumbnailUrl ?? ""} />
+        <input type="hidden" name="distributionUrl" value={distributionUrl} />
+
+        <Field label="タイトル" required>
+          <input
+            name="title"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="作者名" optional>
+            <input name="authorName" className={inputClass} />
+          </Field>
+          <Field label="サークル名" optional>
+            <input name="circleName" placeholder="個人制作の場合は空欄で構いません" className={inputClass} />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="対応版" optional>
+            <select name="systemVersion" defaultValue="" className={inputClass}>
+              <option value="">不明・未設定</option>
+              <option value="クトゥルフ神話TRPG">クトゥルフ神話TRPG</option>
+              <option value="新クトゥルフ神話TRPG">新クトゥルフ神話TRPG</option>
+            </select>
+          </Field>
+          <Field label="舞台" optional>
+            <select name="setting" defaultValue="" className={inputClass}>
+              <option value="">不明・未設定</option>
+              <option value="現代日本">現代日本</option>
+              <option value="現代海外">現代海外</option>
+              <option value="1920年代">1920年代</option>
+              <option value="架空世界">架空世界</option>
+              <option value="その他">その他</option>
+            </select>
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="推奨プレイ人数" optional>
+            <select name="recommendedPlayers" defaultValue="" className={inputClass}>
+              <option value="">不明・未設定</option>
+              <option value="1人">1人</option>
+              <option value="1〜3人">1〜3人</option>
+              <option value="2〜3人">2〜3人</option>
+              <option value="4〜5人">4〜5人</option>
+            </select>
+          </Field>
+          <Field label="プレイ時間の目安" optional>
+            <select name="playTime" defaultValue="" className={inputClass}>
+              <option value="">不明・未設定</option>
+              <option value="〜2時間">〜2時間</option>
+              <option value="2〜3時間">2〜3時間</option>
+              <option value="4〜6時間">4〜6時間</option>
+              <option value="8時間以上">8時間以上</option>
+            </select>
+          </Field>
+        </div>
+
+        <Field label="戦闘要素" optional>
+          <label className="flex items-center gap-2.5 text-[13px]">
+            <input type="checkbox" name="hasCombat" className="h-4 w-4 accent-accent" />
+            戦闘が発生するシナリオである
+          </label>
+          <p className="ml-6 mt-1.5 text-[11px] text-ink-faint">
+            チェックなしの場合、レビュー時の「戦闘の激しさ」の入力項目が表示されなくなります。
+          </p>
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="価格" required>
+            <input name="priceText" required defaultValue="無料" className={inputClass} />
+          </Field>
+          <Field label="シナリオ本文の文字数" optional>
+            <input
+              name="wordCount"
+              type="number"
+              placeholder="例：15000（目安で構いません）"
+              className={inputClass}
+            />
+          </Field>
+        </div>
+
+        <Field label="紹介文" optional>
+          <p className="mb-2 text-[11px] text-ink-faint">
+            空欄の場合は、取得済みの頒布ページの説明がそのまま表示されます。自分の言葉で書き直したい場合のみ入力してください。
+          </p>
+          <textarea
+            name="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="必要サプリメント" optional>
+          <p className="mb-2 text-[11px] text-ink-faint">
+            プレイに必要な、またはあると望ましいサプリメント（ソースブック）を選んでください。複数選択できます。
+          </p>
+          <TagSelect
+            options={SUPPLEMENTS}
+            selected={selectedSupplements}
+            onToggle={(v) => toggle(selectedSupplements, setSelectedSupplements, v)}
+            name="requiredSupplements"
+          />
+        </Field>
+
+        <div>
+          <label className="mb-2 block text-[13px] font-medium">
+            タグ<span className="ml-1 text-[11px] font-normal text-ink-faint">（任意）</span>
+          </label>
+          <p className="mb-3 text-[11px] text-ink-faint">
+            当てはまるものを複数選択できます。検索・絞り込みに使われます。
+          </p>
+          <div className="space-y-4">
+            {TAG_GROUPS.map((group) => (
+              <div key={group.title}>
+                <div className="mb-2 text-[11px] text-ink-faint">{group.title}</div>
+                <TagSelect
+                  options={group.tags}
+                  selected={selectedTags}
+                  onToggle={(v) => toggle(selectedTags, setSelectedTags, v)}
+                  name="tags"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {state.error && (
+        <p className="rounded-lg border border-accent-bg bg-accent-bg px-4 py-3 text-[13px] text-accent">
+          {state.error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-ink-faint">
+          タイトル・価格・頒布元だけでも登録できます。残りの情報は後から誰でも追記できます。
+        </span>
+        <button
+          type="submit"
+          disabled={isPending}
+          className="rounded-md bg-accent px-7 py-2.5 text-[13px] text-white disabled:opacity-60"
+        >
+          {isPending ? "登録中…" : "シナリオを登録する"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+const inputClass =
+  "w-full rounded-md border border-line-strong px-3.5 py-2.5 text-[13px] outline-none focus:border-accent";
+
+function Field({
+  label,
+  required,
+  optional,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  optional?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-[18px]">
+      <label className="mb-2 block text-[13px] font-medium">
+        {label}
+        {required && <span className="ml-1 text-[12px] text-accent">※必須</span>}
+        {optional && <span className="ml-1 text-[11px] font-normal text-ink-faint">（任意）</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+function TagSelect({
+  options,
+  selected,
+  onToggle,
+  name,
+}: {
+  options: string[];
+  selected: Set<string>;
+  onToggle: (value: string) => void;
+  name: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <label key={opt}>
+          <input
+            type="checkbox"
+            name={name}
+            value={opt}
+            checked={selected.has(opt)}
+            onChange={() => onToggle(opt)}
+            className="peer hidden"
+          />
+          <span
+            onClick={() => onToggle(opt)}
+            className={`inline-block cursor-pointer rounded-full border px-3.5 py-1.5 text-xs transition-colors ${
+              selected.has(opt)
+                ? "border-accent bg-accent-bg text-accent"
+                : "border-line-strong text-ink-sub"
+            }`}
+          >
+            {opt}
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
