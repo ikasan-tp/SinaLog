@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { LogoutButton } from "./logout-button";
 
 export async function Header() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { isConfigured } = getSupabaseConfig();
+  const user = isConfigured
+    ? (await (await createClient()).auth.getUser()).data.user
+    : null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-panel">

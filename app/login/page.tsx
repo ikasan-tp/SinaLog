@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -24,8 +25,15 @@ function LoginForm() {
 
   const redirectBase =
     typeof window !== "undefined" ? window.location.origin : "";
+  const isSupabaseConfigured = getSupabaseConfig().isConfigured;
 
   async function handleGoogleLogin() {
+    if (!isSupabaseConfigured) {
+      setStatus("error");
+      setErrorMessage("Supabaseの環境変数が未設定です。NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY を設定してください。");
+      return;
+    }
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -43,6 +51,11 @@ function LoginForm() {
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
+    if (!isSupabaseConfigured) {
+      setStatus("error");
+      setErrorMessage("Supabaseの環境変数が未設定です。NEXT_PUBLIC_SUPABASE_URL と NEXT_PUBLIC_SUPABASE_ANON_KEY を設定してください。");
+      return;
+    }
 
     setStatus("sending");
     const supabase = createClient();
