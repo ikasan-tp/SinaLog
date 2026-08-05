@@ -31,8 +31,8 @@ export default async function HomePage() {
       <Header />
 
       <div className="border-b border-line bg-panel">
-        <nav className="mx-auto flex h-11 max-w-6xl items-center gap-6 overflow-x-auto px-6 text-[13px] text-ink-sub">
-          <Link href="/" className="font-medium text-accent">シナリオを探す</Link>
+        <nav className="mx-auto flex h-11 max-w-6xl items-center gap-6 overflow-x-auto px-5 text-[13px] text-ink-sub sm:px-6">
+          <Link href="/" className="whitespace-nowrap font-medium text-accent">シナリオを探す</Link>
           <Link href="/scenarios/new" className="whitespace-nowrap hover:text-accent">シナリオを登録する</Link>
           <Link href="/search" className="whitespace-nowrap hover:text-accent">人気ランキング</Link>
           <Link href="/search" className="whitespace-nowrap hover:text-accent">新着レビュー</Link>
@@ -40,7 +40,7 @@ export default async function HomePage() {
         </nav>
       </div>
 
-      <div className="mx-auto w-full max-w-6xl px-6 pt-5">
+      <div className="mx-auto w-full max-w-6xl px-5 pt-5 sm:px-6">
         <form action="/search" className="flex flex-wrap items-end gap-3 rounded-lg border border-line bg-panel p-4">
           <label className="flex min-w-60 flex-[2] flex-col gap-1.5 text-[11px] text-ink-faint">
             キーワード
@@ -181,4 +181,3 @@ async function getLatestScenarios() {
     stats: statsByScenario.get(scenario.id) as ScenarioStats | undefined,
   }));
 }
-
