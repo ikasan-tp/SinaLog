@@ -2,96 +2,163 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 
-const sections = [
-  {
-    id: "basic",
-    title: "基本の使い方",
-    items: [
-      ["会員登録は必要ですか？", "シナリオを閲覧するだけなら登録は不要です。レビューの投稿やシナリオ登録を行う場合のみログインが必要です。"],
-      ["ログインに必要なものは？", "Googleアカウント、またはメールアドレスがあればログインできます。メールログインではパスワードの設定は不要です。"],
-    ],
-  },
-  {
-    id: "review",
-    title: "レビューについて",
-    items: [
-      ["低い評価のレビューは書いてよいですか？", "問題ありません。人格攻撃ではなく、どの点が合わなかったかを具体的に書いてください。"],
-      ["投稿したレビューを編集できますか？", "マイページから投稿済みレビューを確認し、必要に応じて編集・削除できる想定です。"],
-    ],
-  },
-  {
-    id: "scenario",
-    title: "シナリオ登録について",
-    items: [
-      ["作者本人でなくても登録できますか？", "公開情報をもとにした紹介として登録できます。ただし、作者が掲載を望まない場合は掲載停止の対象になります。"],
-      ["BOOTHなどのURLは必要ですか？", "配布ページや告知ページなど、シナリオを確認できるURLを登録してください。"],
-    ],
-  },
-  {
-    id: "moderation",
-    title: "通報・要素タグについて",
-    items: [
-      ["問題のあるレビューを見つけました。", "レビューの通報機能から理由を送信してください。運営側で確認し、必要に応じて非表示対応を行います。"],
-      ["要素タグはネタバレになりませんか？", "プレイ前の判断材料として扱える範囲に留め、核心的なネタバレはレビュー本文側で分けてください。"],
-    ],
-  },
+const TOC = [
+  { id: "basic", label: "基本の使い方" },
+  { id: "review", label: "レビューについて" },
+  { id: "scenario", label: "シナリオ登録について" },
+  { id: "moderation", label: "通報・要素タグについて" },
+  { id: "account", label: "アカウントについて" },
+  { id: "contact", label: "お問い合わせ" },
 ];
 
-export default function Page() {
+export default function HelpPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto grid w-full max-w-[820px] flex-1 gap-8 px-5 py-9 md:grid-cols-[180px_1fr] md:px-6">
-        <aside className="rounded-lg border border-line bg-panel p-4 text-[12.5px] md:sticky md:top-24 md:self-start md:border-0 md:bg-transparent md:p-0">
-          <div className="mb-2 text-xs font-bold text-ink-faint">目次</div>
-          {sections.map((section) => (
-            <a key={section.id} href={`#${section.id}`} className="block py-1 text-ink-sub hover:text-accent">
-              {section.title}
-            </a>
-          ))}
-          <a href="#contact" className="block py-1 text-ink-sub hover:text-accent">お問い合わせ</a>
-        </aside>
+      <main className="mx-auto grid w-full max-w-4xl flex-1 grid-cols-1 gap-9 px-6 py-9 md:grid-cols-[160px_1fr]">
+        <nav className="text-[12.5px] md:sticky md:top-24 md:self-start">
+          <div className="mb-3 text-xs font-bold text-ink-faint">目次</div>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 md:block md:space-y-0.5">
+            {TOC.map((item) => (
+              <li key={item.id}>
+                <a href={`#${item.id}`} className="block py-1 text-ink-sub hover:text-accent">
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <article className="text-[13.5px] leading-8">
+        <div>
           <h1 className="mb-2 text-2xl font-bold">ヘルプ</h1>
-          <p className="mb-8 text-xs text-ink-faint">
+          <p className="mb-8 text-xs leading-relaxed text-ink-faint">
             よくある質問をまとめています。規約について知りたい場合は
-            <Link href="/terms" className="text-link underline">利用規約・プライバシーポリシー</Link>
+            <Link href="/terms" className="text-link underline">
+              利用規約・プライバシーポリシー
+            </Link>
             をご覧ください。
           </p>
 
-          {sections.map((section, index) => (
-            <section key={section.id} id={section.id} className={index === 0 ? "scroll-mt-24" : "mt-9 scroll-mt-24 border-t border-line pt-5"}>
-              <h2 className="mb-3 text-[15px] font-bold">{section.title}</h2>
-              <div className="space-y-5">
-                {section.items.map(([question, answer]) => (
-                  <div key={question}>
-                    <div className="mb-1 flex gap-2 font-bold">
-                      <span className="text-accent">Q.</span>
-                      <span>{question}</span>
-                    </div>
-                    <p className="pl-6 text-[13px] text-ink-sub">{answer}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+          <Section id="basic" title="基本の使い方" first>
+            <Faq q="会員登録は必要ですか？">
+              シナリオを閲覧するだけなら登録は不要です。レビューの投稿・お気に入り登録・シナリオ登録を行う場合のみ、ログインが必要になります。
+            </Faq>
+            <Faq q="ログインに必要なものは？">
+              Googleアカウント、またはメールアドレスのどちらかがあればログインできます。パスワードの設定は不要です（メールで届くリンクからログインします）。
+            </Faq>
+          </Section>
 
-          <section id="contact" className="mt-9 scroll-mt-24 border-t border-line pt-5">
-            <h2 className="mb-3 text-[15px] font-bold">お問い合わせ</h2>
-            <div className="rounded-lg border border-line bg-panel p-5">
-              <p className="mb-4 text-[12.5px] text-ink-sub">
-                掲載停止、権利者からの連絡、通報に関する補足はお問い合わせフォームからご連絡ください。
-              </p>
-              <Link href="/excluded-authors" className="inline-block rounded-md bg-accent px-5 py-2.5 text-[13px] text-white hover:bg-accent-hover">
-                掲載停止について確認する
+          <Section id="review" title="レビューについて">
+            <Faq q="低い評価のレビューは書きにくいのですが。">
+              シナログでは「良かった点」を必須、「気になった点」を任意にしています。良かった点が見つからない場合でも、シナリオのどの部分がどうだったかを具体的に書いていただければ十分です。人格攻撃にあたる内容は削除の対象になります。
+            </Faq>
+            <Faq q="低評価のレビューが見当たりません。">
+              シナリオ詳細ページのレビュー一覧は、初期状態で厳しめの評価を含めない表示になっています。「気になる点も含む」タブに切り替えると確認できます。
+            </Faq>
+            <Faq q="投稿したレビューを編集・削除したい。">
+              <Link href="/mypage" className="underline">
+                マイページ
               </Link>
+              の「投稿したレビュー」から、いつでも編集・削除できます。
+            </Faq>
+          </Section>
+
+          <Section id="scenario" title="シナリオ登録について">
+            <Faq q="自分のシナリオを登録したい。">
+              <Link href="/scenarios/new" className="underline">
+                シナリオを登録する
+              </Link>
+              から、頒布ページのURLを貼り付けるだけで基本情報を自動取得できます。タイトル・価格・頒布元以外の項目は空欄のままでも登録可能です。
+            </Faq>
+            <Faq q="登録した内容を後から直したい。">
+              <Link href="/mypage" className="underline">
+                マイページ
+              </Link>
+              の「登録したシナリオ」から「情報を編集」を選んでください。項目は誰でも補完・修正できる設計になっています。
+            </Faq>
+            <Faq q="自分の作品を掲載してほしくない。">
+              無料公開作品であれば、
+              <Link href="/excluded-authors" className="underline">
+                掲載不可作者一覧
+              </Link>
+              のページから掲載停止を申請できます。有償頒布作品はレビューが購入判断の材料になるため、原則として対象外としていますが、著作権侵害など特別な事情がある場合はお問い合わせください。
+            </Faq>
+          </Section>
+
+          <Section id="moderation" title="通報・要素タグについて">
+            <Faq q="不適切なレビューを見つけました。">
+              各レビューの右下にある「通報する」から報告できます。運営が内容を確認したうえで、必要に応じて非表示にします。
+            </Faq>
+            <Faq q="「プレイ前に知っておきたい要素」とは何ですか？">
+              性描写や暴力表現など、事前に知っておきたい要素をレビュアーが申告する項目です。ネタバレを避けるため、具体的な展開ではなく要素の種類のみが集計・表示されます。
+            </Faq>
+            <Faq q="「引用・参考元について」の項目は何のためにありますか？">
+              既存作品からの影響を感じたかどうかを、レビュアーの回答として集計する項目です。特定のレビューや申告をもって「盗作である」と断定するものではなく、あくまで回答の分布を示すものです。
+            </Faq>
+          </Section>
+
+          <Section id="account" title="アカウントについて">
+            <Faq q="表示名やアイコンを変更したい。">
+              <Link href="/mypage" className="underline">
+                マイページ
+              </Link>
+              の「プロフィール編集」から、表示名の変更やアイコン・カラーの選択ができます。
+            </Faq>
+            <Faq q="アカウントを削除したい。">
+              マイページの「アカウント設定」から削除できます。投稿したレビューやシナリオ情報も削除されますので、あらかじめご了承ください。
+            </Faq>
+          </Section>
+
+          <Section id="contact" title="お問い合わせ">
+            <div className="rounded-lg border border-line bg-panel p-5">
+              <p className="mb-3.5 text-xs leading-relaxed text-ink-sub">
+                ここに載っていないご質問や、不具合のご報告などがありましたら、お気軽にご連絡ください。
+              </p>
+              <a
+                href="mailto:contact@sinalog.example"
+                className="inline-block rounded-md bg-accent px-5 py-2.5 text-[13px] text-white hover:bg-accent-hover"
+              >
+                お問い合わせする
+              </a>
             </div>
-          </section>
-        </article>
+          </Section>
+        </div>
       </main>
       <Footer />
     </>
   );
 }
 
+function Section({
+  id,
+  title,
+  first,
+  children,
+}: {
+  id: string;
+  title: string;
+  first?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className={`scroll-mt-24 ${first ? "" : "mt-9 border-t border-line pt-9"}`}
+    >
+      <h2 className="mb-3 text-[15px] font-bold">{title}</h2>
+      <div className="space-y-5">{children}</div>
+    </section>
+  );
+}
+
+function Faq({ q, children }: { q: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1.5 flex gap-2 text-[13.5px] font-bold text-ink">
+        <span className="flex-shrink-0 text-accent">Q.</span>
+        {q}
+      </div>
+      <div className="pl-[22px] text-[13px] leading-relaxed text-ink-sub">{children}</div>
+    </div>
+  );
+}

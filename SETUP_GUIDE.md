@@ -27,6 +27,7 @@
    0003_reviews.sql
    0004_review_aggregates.sql
    0005_reports.sql
+   0006_excluded_authors.sql
    ```
    1ファイルずつ中身をコピーしてSQL Editorに貼り付け、実行（Run）すればよい。
 3. 左メニュー「Table Editor」で `users` `scenarios` `reviews` `reports` の4テーブルが作成されていれば成功
@@ -156,4 +157,5 @@ update public.users set is_admin = true where id = '上で確認したid';
 | Magic Linkのメールが届かない | 迷惑メールフォルダを確認。Supabase無料枠のメール送信数上限に達している可能性もある（Authentication > Logsで送信履歴を確認できる） |
 | ローカルではOKだが本番でログインできない | 本番ドメインをSupabase・Google Cloud両方のリダイレクトURL設定に追加し忘れている典型パターン |
 | `/admin/reports` にアクセスできない | 手順4の管理者権限付与を忘れている、またはSQLのuser idを間違えている |
+| ログイン時に `No API key found in request` エラーが出る | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` が空のままリクエストが送られている。①プロジェクト直下に`.env.local`が実際に存在するか、②`.env.local.example`のままの値(`your-anon-key`等)になっていないか、③値を書き換えた後に`npm run dev`を再起動したか、④Vercel本番の場合はEnvironment Variables設定後に再デプロイしたか、を確認する。現在のコードはこの設定漏れがあるとブラウザのコンソールに分かりやすい日本語エラーを表示するようにしてある |
 | ビルドがフォント関連で失敗する | Next.jsのビルド環境からGoogle Fontsへのネットワークアクセスが必要。社内プロキシ環境等では発生しうるが、Vercel上では問題なく取得できる |
