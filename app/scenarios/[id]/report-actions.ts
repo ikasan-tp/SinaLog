@@ -76,6 +76,6 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
   } = await supabase.auth.getUser();
   if (!user) throw new Error("ログインが必要です");
 
-  const { data: profile } = await supabase.from("users").select("is_admin").eq("id", user.id).single();
-  if (!profile?.is_admin) throw new Error("管理者権限が必要です");
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (!isAdmin) throw new Error("管理者権限が必要です");
 }

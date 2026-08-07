@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "./logout-button";
+import { MobileSearchToggle } from "./mobile-search-toggle";
+import { SearchForm } from "./search-form";
 
 export async function Header() {
   const supabase = await createClient();
@@ -10,23 +12,15 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-panel">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-7 px-6">
+      <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-7 px-6">
         <Link href="/" className="text-[17px] font-bold text-ink">
           Sina<span className="text-accent">log</span>
         </Link>
 
-        <div className="hidden max-w-[420px] flex-1 md:flex">
-          <input
-            type="text"
-            placeholder="シナリオ名・作者名で検索"
-            className="w-full rounded-l-md border border-line-strong bg-panel px-3 py-2 text-sm text-ink outline-none focus:border-accent"
-          />
-          <button className="rounded-r-md border border-l-0 border-line-strong px-4 text-sm text-ink-sub">
-            検索
-          </button>
-        </div>
+        {/* デスクトップ幅ではヘッダー内に検索欄を表示する */}
+        <SearchForm className="hidden max-w-[420px] flex-1 md:flex" />
 
-        <div className="ml-auto flex items-center gap-5">
+        <div className="ml-auto flex items-center gap-4">
           {user ? (
             <>
               <Link href="/mypage" className="text-[13px] text-ink-sub hover:text-accent">
@@ -42,6 +36,9 @@ export async function Header() {
               ログイン / 新規登録
             </Link>
           )}
+
+          {/* スマホ幅では検索欄をハンバーガーメニューに格納する */}
+          <MobileSearchToggle />
         </div>
       </div>
     </header>

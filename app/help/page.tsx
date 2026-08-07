@@ -29,7 +29,7 @@ export default function HelpPage() {
           </ul>
         </nav>
 
-        <div>
+        <div className="text-pretty">
           <h1 className="mb-2 text-2xl font-bold">ヘルプ</h1>
           <p className="mb-8 text-xs leading-relaxed text-ink-faint">
             よくある質問をまとめています。規約について知りたい場合は
@@ -74,7 +74,7 @@ export default function HelpPage() {
               <Link href="/mypage" className="underline">
                 マイページ
               </Link>
-              の「登録したシナリオ」から「情報を編集」を選んでください。項目は誰でも補完・修正できる設計になっています。
+              の「登録したシナリオ」から「情報を編集」を選んでください（編集できるのは登録した本人のみです）。
             </Faq>
             <Faq q="自分の作品を掲載してほしくない。">
               無料公開作品であれば、
@@ -102,7 +102,7 @@ export default function HelpPage() {
               <Link href="/mypage" className="underline">
                 マイページ
               </Link>
-              の「プロフィール編集」から、表示名の変更やアイコン・カラーの選択ができます。
+              の「アカウント設定」から表示名を、プロフィール上部の「アイコンを変更」からアイコン・カラーを選べます。
             </Faq>
             <Faq q="アカウントを削除したい。">
               マイページの「アカウント設定」から削除できます。投稿したレビューやシナリオ情報も削除されますので、あらかじめご了承ください。

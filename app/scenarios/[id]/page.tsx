@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { FavoriteButton } from "@/components/favorite-button";
 import { createClient } from "@/lib/supabase/server";
 import { ELEMENT_TO_CATEGORY } from "@/lib/content-taxonomy";
 import { ReviewList } from "./review-list";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ registered?: string; reviewed?: string }>;
+  searchParams: Promise<{ registered?: string; reviewed?: string; updated?: string }>;
 };
 
 const DIFFICULTY_LABEL: Record<string, string> = { easy: "優しい", normal: "普通", severe: "シビア" };
@@ -17,9 +18,13 @@ const COMBAT_LABEL: Record<string, string> = { none: "ほぼ無い", light: "軽
 
 export default async function ScenarioDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const { registered, reviewed } = await searchParams;
+  const { registered, reviewed, updated } = await searchParams;
 
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const [{ data: scenario }, { data: stats }, { data: elementCounts }, { data: reviews }] =
     await Promise.all([
@@ -43,6 +48,29 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
 
   if (!scenario) notFound();
 
+  // ログイン中のみ必要な情報(自分のお気に入り状態・自分のレビュー有無・登録者本人か)
+  let isFavorited = false;
+  let hasOwnReview = false;
+  if (user) {
+    const [{ data: favorite }, { data: ownReview }] = await Promise.all([
+      supabase
+        .from("favorites")
+        .select("scenario_id")
+        .eq("user_id", user.id)
+        .eq("scenario_id", id)
+        .maybeSingle(),
+      supabase
+        .from("reviews")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("scenario_id", id)
+        .maybeSingle(),
+    ]);
+    isFavorited = !!favorite;
+    hasOwnReview = !!ownReview;
+  }
+  const isOwner = user?.id === scenario.registered_by;
+
   const reviewCount = stats?.review_count ?? 0;
   const recommendPct = stats?.recommend_pct ?? null;
 
@@ -60,6 +88,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
         {registered && <Banner>シナリオを登録しました</Banner>}
         {reviewed && <Banner>レビューを投稿しました</Banner>}
+        {updated && <Banner>更新しました</Banner>}
 
         <div className="overflow-hidden rounded-xl border border-line bg-panel">
           <div className="relative h-[180px] bg-gradient-to-br from-[#3A2E33] to-[#241C22]">
@@ -71,7 +100,20 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
           </div>
 
           <div className="p-8">
-            <h1 className="mb-1.5 text-2xl font-bold">{scenario.title}</h1>
+            <div className="mb-1.5 flex flex-wrap items-start justify-between gap-3">
+              <h1 className="text-2xl font-bold">{scenario.title}</h1>
+              <div className="flex flex-shrink-0 gap-2">
+                <FavoriteButton scenarioId={scenario.id} isLoggedIn={!!user} initialFavorited={isFavorited} />
+                {isOwner && (
+                  <Link
+                    href={`/scenarios/${scenario.id}/edit`}
+                    className="flex items-center rounded-md border border-line-strong px-4 py-2 text-xs text-ink-sub hover:bg-bg"
+                  >
+                    情報を編集
+                  </Link>
+                )}
+              </div>
+            </div>
             <p className="mb-5 text-[13px] text-ink-sub">
               {scenario.author_name && <>作者：{scenario.author_name}　</>}
               頒布：
@@ -159,7 +201,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
                 href={`/scenarios/${scenario.id}/review/new`}
                 className="rounded-md bg-accent px-4 py-2 text-xs text-white hover:bg-accent-hover"
               >
-                レビューを投稿する
+                {hasOwnReview ? "自分のレビューを編集する" : "レビューを投稿する"}
               </Link>
             </div>
 

@@ -1,26 +1,60 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { createScenario, type CreateScenarioState } from "./actions";
+import { createScenario, type CreateScenarioState } from "@/app/scenarios/new/actions";
+import { updateScenario } from "@/app/scenarios/[id]/edit/actions";
 import { TAG_GROUPS, SUPPLEMENTS } from "@/lib/content-taxonomy";
 
 type OgpResult = { title: string; thumbnailUrl: string; description: string };
 type FetchStatus = "idle" | "loading" | "success" | "error";
 
+export type ScenarioFormInitialValues = {
+  title: string;
+  authorName: string;
+  circleName: string;
+  distributionUrl: string;
+  priceText: string;
+  systemVersion: string;
+  setting: string;
+  recommendedPlayers: string;
+  playTime: string;
+  hasCombat: boolean;
+  wordCount: number | null;
+  description: string;
+  thumbnailUrl: string;
+  tags: string[];
+  requiredSupplements: string[];
+};
+
 const initialState: CreateScenarioState = {};
 
-export function ScenarioForm() {
-  const [state, formAction, isPending] = useActionState(createScenario, initialState);
+export function ScenarioForm({
+  mode = "create",
+  scenarioId,
+  initialValues,
+}: {
+  mode?: "create" | "edit";
+  scenarioId?: string;
+  initialValues?: ScenarioFormInitialValues;
+}) {
+  const action = mode === "edit" ? updateScenario.bind(null, scenarioId!) : createScenario;
+  const [state, formAction, isPending] = useActionState(action, initialState);
 
-  const [distributionUrl, setDistributionUrl] = useState("");
+  const [distributionUrl, setDistributionUrl] = useState(initialValues?.distributionUrl ?? "");
   const [fetchStatus, setFetchStatus] = useState<FetchStatus>("idle");
   const [fetchError, setFetchError] = useState("");
-  const [ogp, setOgp] = useState<OgpResult | null>(null);
+  const [ogp, setOgp] = useState<OgpResult | null>(
+    initialValues?.thumbnailUrl ? { title: "", thumbnailUrl: initialValues.thumbnailUrl, description: "" } : null
+  );
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-  const [selectedSupplements, setSelectedSupplements] = useState<Set<string>>(new Set());
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [description, setDescription] = useState(initialValues?.description ?? "");
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(
+    new Set(initialValues?.tags ?? [])
+  );
+  const [selectedSupplements, setSelectedSupplements] = useState<Set<string>>(
+    new Set(initialValues?.requiredSupplements ?? [])
+  );
 
   async function handleFetchOgp() {
     if (!distributionUrl) return;
@@ -63,8 +97,10 @@ export function ScenarioForm() {
       {/* 頒布ページURL & 自動取得 */}
       <section className="rounded-xl border border-line bg-panel p-7">
         <h2 className="mb-1 text-[15px] font-bold">頒布ページURL</h2>
-        <p className="mb-4 text-xs text-ink-faint">
-          BOOTHなどの頒布ページURLを貼り付けてください。対応外のサイトの場合は手動で入力できます。
+        <p className="mb-4 text-pretty text-xs text-ink-faint">
+          {mode === "edit"
+            ? "URLを修正した場合や、画像・タイトルを取得し直したい場合はこちらから再取得できます。"
+            : "BOOTHなどの頒布ページURLを貼り付けてください。対応外のサイトの場合は手動で入力できます。"}
         </p>
 
         <div className="flex gap-2.5">
@@ -118,7 +154,7 @@ export function ScenarioForm() {
       <section className="rounded-xl border border-line bg-panel p-7">
         <h2 className="mb-1 text-[15px] font-bold">シナリオ情報</h2>
         <p className="mb-4 text-xs text-ink-faint">
-          タイトル・価格・頒布元以外は空欄のまま登録できます。後から誰でも補完できるので、詳細が分からない場合は無理に埋めなくて大丈夫です。
+          タイトル・価格・頒布元以外は空欄のまま登録できます。詳細が分からない場合は無理に埋めなくて大丈夫です（登録後、内容の修正は登録した本人のみ行えます）。
         </p>
 
         <input type="hidden" name="thumbnailUrl" value={ogp?.thumbnailUrl ?? ""} />
@@ -136,23 +172,28 @@ export function ScenarioForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="作者名" optional>
-            <input name="authorName" className={inputClass} />
+            <input name="authorName" defaultValue={initialValues?.authorName} className={inputClass} />
           </Field>
           <Field label="サークル名" optional>
-            <input name="circleName" placeholder="個人制作の場合は空欄で構いません" className={inputClass} />
+            <input
+              name="circleName"
+              defaultValue={initialValues?.circleName}
+              placeholder="個人制作の場合は空欄で構いません"
+              className={inputClass}
+            />
           </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="対応版" optional>
-            <select name="systemVersion" defaultValue="" className={inputClass}>
+            <select name="systemVersion" defaultValue={initialValues?.systemVersion ?? ""} className={inputClass}>
               <option value="">不明・未設定</option>
               <option value="クトゥルフ神話TRPG">クトゥルフ神話TRPG</option>
               <option value="新クトゥルフ神話TRPG">新クトゥルフ神話TRPG</option>
             </select>
           </Field>
           <Field label="舞台" optional>
-            <select name="setting" defaultValue="" className={inputClass}>
+            <select name="setting" defaultValue={initialValues?.setting ?? ""} className={inputClass}>
               <option value="">不明・未設定</option>
               <option value="現代日本">現代日本</option>
               <option value="現代海外">現代海外</option>
@@ -165,7 +206,11 @@ export function ScenarioForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="推奨プレイ人数" optional>
-            <select name="recommendedPlayers" defaultValue="" className={inputClass}>
+            <select
+              name="recommendedPlayers"
+              defaultValue={initialValues?.recommendedPlayers ?? ""}
+              className={inputClass}
+            >
               <option value="">不明・未設定</option>
               <option value="1人">1人</option>
               <option value="1〜3人">1〜3人</option>
@@ -174,7 +219,7 @@ export function ScenarioForm() {
             </select>
           </Field>
           <Field label="プレイ時間の目安" optional>
-            <select name="playTime" defaultValue="" className={inputClass}>
+            <select name="playTime" defaultValue={initialValues?.playTime ?? ""} className={inputClass}>
               <option value="">不明・未設定</option>
               <option value="〜2時間">〜2時間</option>
               <option value="2〜3時間">2〜3時間</option>
@@ -186,7 +231,12 @@ export function ScenarioForm() {
 
         <Field label="戦闘要素" optional>
           <label className="flex items-center gap-2.5 text-[13px]">
-            <input type="checkbox" name="hasCombat" className="h-4 w-4 accent-accent" />
+            <input
+              type="checkbox"
+              name="hasCombat"
+              defaultChecked={initialValues?.hasCombat}
+              className="h-4 w-4 accent-accent"
+            />
             戦闘が発生するシナリオである
           </label>
           <p className="ml-6 mt-1.5 text-[11px] text-ink-faint">
@@ -196,12 +246,18 @@ export function ScenarioForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="価格" required>
-            <input name="priceText" required defaultValue="無料" className={inputClass} />
+            <input
+              name="priceText"
+              required
+              defaultValue={initialValues?.priceText ?? "無料"}
+              className={inputClass}
+            />
           </Field>
           <Field label="シナリオ本文の文字数" optional>
             <input
               name="wordCount"
               type="number"
+              defaultValue={initialValues?.wordCount ?? undefined}
               placeholder="例：15000（目安で構いません）"
               className={inputClass}
             />
@@ -210,7 +266,7 @@ export function ScenarioForm() {
 
         <Field label="紹介文" optional>
           <p className="mb-2 text-[11px] text-ink-faint">
-            空欄の場合は、取得済みの頒布ページの説明がそのまま表示されます。自分の言葉で書き直したい場合のみ入力してください。
+            空欄のままでも登録できます。頒布ページの説明文を参考に、自分の言葉で書いていただいても構いません。
           </p>
           <textarea
             name="description"
@@ -263,15 +319,17 @@ export function ScenarioForm() {
       )}
 
       <div className="flex items-center justify-between">
-        <span className="text-xs text-ink-faint">
-          タイトル・価格・頒布元だけでも登録できます。残りの情報は後から誰でも追記できます。
+        <span className="text-pretty text-xs text-ink-faint">
+          {mode === "edit"
+            ? "この内容で更新します。"
+            : "タイトル・価格・頒布元だけでも登録できます。残りの情報は後からマイページで追記できます。"}
         </span>
         <button
           type="submit"
           disabled={isPending}
           className="rounded-md bg-accent px-7 py-2.5 text-[13px] text-white disabled:opacity-60"
         >
-          {isPending ? "登録中…" : "シナリオを登録する"}
+          {isPending ? "保存中…" : mode === "edit" ? "変更を保存する" : "シナリオを登録する"}
         </button>
       </div>
     </form>
@@ -328,7 +386,6 @@ function TagSelect({
             className="peer hidden"
           />
           <span
-            onClick={() => onToggle(opt)}
             className={`inline-block cursor-pointer rounded-full border px-3.5 py-1.5 text-xs transition-colors ${
               selected.has(opt)
                 ? "border-accent bg-accent-bg text-accent"

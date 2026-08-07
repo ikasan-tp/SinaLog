@@ -25,15 +25,28 @@ export default async function NewReviewPage({ params }: Props) {
 
   if (!scenario) notFound();
 
+  const { data: existingReview } = await supabase
+    .from("reviews")
+    .select(
+      "role, play_format, recommend, modification, modification_details, modification_advice, exploration_difficulty, combat_intensity, kp_or_pc_load, replay_intention, group_dependency, session_note, content_warning_adequacy, homage_answer, homage_note, ai_usage_answer, price_fairness, good_point, concern_point, spoiler_text, elements, tags"
+    )
+    .eq("scenario_id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   return (
     <>
       <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
-        <h1 className="mb-1.5 text-xl font-bold">レビューを投稿する</h1>
+        <h1 className="mb-1.5 text-xl font-bold">
+          {existingReview ? "レビューを編集する" : "レビューを投稿する"}
+        </h1>
         <p className="mb-7 text-[13px] text-ink-sub">
-          実際にプレイした内容をもとに、これから遊ぶ人の参考になる感想を書いてください。
+          {existingReview
+            ? "投稿済みのレビューを編集します。保存すると内容が上書きされます。"
+            : "実際にプレイした内容をもとに、これから遊ぶ人の参考になる感想を書いてください。"}
         </p>
-        <ReviewForm scenario={scenario} />
+        <ReviewForm scenario={scenario} existingReview={existingReview} />
       </main>
       <Footer />
     </>

@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export type ThemeMode = "light" | "dark";
 export type AccentColor =
@@ -41,12 +42,12 @@ function applyToDocument(prefs: ThemePrefs) {
  * 個人ごとのテーマ設定を管理する。
  *
  * 保存の優先順位:
- *   1. ログイン中: Supabaseの users.theme_mode / users.theme_color (今後実装)
- *   2. 未ログイン、または未実装の間: localStorage
+ *   1. ログイン中: Supabaseの users.theme_mode / users.theme_color
+ *   2. 未ログイン: localStorage
  *
- * 今はlocalStorageのみで完結させている。ログイン連携は
- * 「ログイン時にDBの値をここへ流し込み、変更時にDBへも書き込む」
- *形で拡張すればよい。
+ * ログイン中はマウント時にDBの値を読み込んでlocalStorageより優先し、
+ * 変更時はlocalStorageとDBの両方に書き込む(DBはfire-and-forget、失敗しても
+ * 表示上のテーマ切り替え自体は成功させる)。
  */
 function readInitialPrefs(): ThemePrefs {
   // SSR時はwindowが無いため、既定値を返す(layout.tsx側のscriptがCSS変数は先に反映済み)
@@ -61,11 +62,43 @@ function readInitialPrefs(): ThemePrefs {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [prefs, setPrefs] = useState<ThemePrefs>(readInitialPrefs);
+  const userIdRef = useRef<string | null>(null);
 
   // マウント時点でDOMへ反映しておく(layout.tsxのインラインscriptで
   // 初回ペイント前には近い状態になっているが、React側の状態とも同期させる)
+  // ログイン中なら、続けてDB側の設定を読み込んでlocalStorageより優先する。
   useEffect(() => {
     applyToDocument(prefs);
+
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      userIdRef.current = user.id;
+
+      const { data } = await supabase
+        .from("users")
+        .select("theme_mode, theme_color")
+        .eq("id", user.id)
+        .single();
+
+      if (data) {
+        const next: ThemePrefs = {
+          mode: (data.theme_mode as ThemeMode) ?? DEFAULT_PREFS.mode,
+          accent: (data.theme_color as AccentColor) ?? DEFAULT_PREFS.accent,
+        };
+        setPrefs(next);
+        applyToDocument(next);
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          // localStorageが使えない環境(プライベートモード等)は無視してよい
+        }
+      }
+    })();
     // 初回マウント時のみでよい。以降の変更はpersist()側でDOMに反映する。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -78,8 +111,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       // localStorageが使えない環境(プライベートモード等)は無視してよい
     }
-    // TODO: ログイン中であれば、ここでSupabaseのusersテーブルにも保存する
-    // await supabase.from("users").update({ theme_mode: next.mode, theme_color: next.accent }).eq("id", userId);
+
+    if (userIdRef.current) {
+      const supabase = createClient();
+      supabase
+        .from("users")
+        .update({ theme_mode: next.mode, theme_color: next.accent })
+        .eq("id", userIdRef.current)
+        .then(({ error }) => {
+          if (error) console.error("テーマ設定の保存に失敗しました:", error);
+        });
+    }
   };
 
   const value: ThemeContextValue = {

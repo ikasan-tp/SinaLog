@@ -16,7 +16,7 @@ export default async function ExcludedAuthorsPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-9">
+      <main className="mx-auto w-full max-w-3xl flex-1 text-pretty px-6 py-9">
         <p className="mb-5 text-xs text-ink-faint">
           <Link href="/" className="hover:text-accent">
             トップ

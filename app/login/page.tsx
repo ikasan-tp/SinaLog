@@ -7,6 +7,19 @@ import { createClient } from "@/lib/supabase/client";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
+/**
+ * next パラメータは利用者が自由に書き換えられるクエリ値のため、
+ * そのままログイン後リダイレクト先に使うとオープンリダイレクト脆弱性になる。
+ * 同一オリジンの相対パスだけを許可する(auth/callback/route.tsのsanitizeNextと同じ方針)。
+ */
+function sanitizeNext(next: string | null): string {
+  if (!next) return "/mypage";
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
+    return "/mypage";
+  }
+  return next;
+}
+
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -20,7 +33,7 @@ function LoginForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/mypage";
+  const next = sanitizeNext(searchParams.get("next"));
 
   const redirectBase =
     typeof window !== "undefined" ? window.location.origin : "";
@@ -72,7 +85,7 @@ function LoginForm() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-5 py-10">
-        <div className="w-full max-w-[380px] rounded-xl border border-line bg-panel p-9">
+        <div className="w-full max-w-[380px] text-pretty rounded-xl border border-line bg-panel p-9">
           {status !== "sent" ? (
             <>
               <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-accent-bg text-accent">

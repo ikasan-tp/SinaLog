@@ -9,10 +9,24 @@ import { createClient } from "@/lib/supabase/server";
  * - Supabaseダッシュボード > Authentication > URL Configuration の
  *   Redirect URLs に `https://<本番ドメイン>/auth/callback` を登録しておくこと
  */
+
+/**
+ * next パラメータはURLクエリから来る = 利用者が自由に書き換えられる値なので、
+ * そのまま外部サイトへのリダイレクトに使うとオープンリダイレクト脆弱性になる。
+ * 同一オリジンの相対パス("/"始まりで"//"や"/\"ではないもの)だけを許可する。
+ */
+function sanitizeNext(next: string | null): string {
+  if (!next) return "/mypage";
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
+    return "/mypage";
+  }
+  return next;
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/mypage";
+  const next = sanitizeNext(searchParams.get("next"));
 
   if (code) {
     const supabase = await createClient();

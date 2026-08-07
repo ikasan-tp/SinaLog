@@ -47,7 +47,7 @@ export default async function HomePage() {
           >
             <span className="text-2xl leading-none">+</span>
             <span className="text-[13px] font-bold text-ink-sub">シナリオを登録する</span>
-            <span className="text-[11.5px] leading-relaxed">
+            <span className="text-pretty text-[11.5px] leading-relaxed">
               {(scenarios?.length ?? 0) === 0
                 ? "まだ登録されているシナリオは多くありません。あなたの一本を追加してみませんか？"
                 : "あなたの一本を追加してみませんか？"}

@@ -31,7 +31,7 @@ export default function TermsPage() {
           </ul>
         </nav>
 
-        <div className="leading-[1.9]">
+        <div className="text-pretty leading-[1.9]">
           <h1 className="mb-2 text-2xl font-bold">利用規約・プライバシーポリシー</h1>
           <p className="mb-8 text-xs text-ink-faint">最終更新日：2026年7月19日</p>
 

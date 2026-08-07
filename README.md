@@ -21,148 +21,119 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
+## 実装状況
+
+主要ページは一通り実装済みです。
+
+| ページ | 状態 |
+|---|---|
+| トップページ（`app/page.tsx`） | 実装済み。Supabaseから新着シナリオを取得して表示 |
+| ログイン（`app/login/`） | 実装済み。Google OAuth + メールMagic Link |
+| シナリオ詳細（`app/scenarios/[id]/`） | 実装済み。おすすめ度・要素タグ集計・レビュー一覧・お気に入り・通報 |
+| シナリオ登録（`app/scenarios/new/`） | 実装済み。OGP自動取得＋タグ選択 |
+| シナリオ編集（`app/scenarios/[id]/edit/`） | 実装済み。登録者本人のみ |
+| レビュー投稿・編集（`app/scenarios/[id]/review/new/`） | 実装済み。既存レビューがあれば内容をプリフィルして編集扱いになる |
+| 検索結果（`app/search/`） | 実装済み。キーワード・複数条件の絞り込み・並び替え・ページネーション |
+| マイページ（`app/mypage/`） | 実装済み。投稿レビュー／好きなシナリオ／登録シナリオ／アカウント設定の4タブ |
+| アイコン選択（`app/mypage/avatar/`） | 実装済み |
+| ヘルプ・利用規約・掲載不可作者一覧（`app/help/` `app/terms/` `app/excluded-authors/`） | 実装済み |
+| 管理画面（`app/admin/reports/`） | 実装済み。`public.admins`テーブルに登録されたユーザーのみアクセス可 |
+
 ## ディレクトリ構成
 
 ```
 app/
-  page.tsx                          トップページ（実装済み・デモ用）
-  login/page.tsx                    ログイン（実装済み: Google OAuth + Magic Link）
-  auth/callback/route.ts            認証コールバック（実装済み）
-  mypage/page.tsx                   マイページ（認証ガードのみ実装済み、UI未実装）
-  scenarios/[id]/page.tsx           シナリオ詳細（未実装）
-  scenarios/new/page.tsx            シナリオ登録（未実装）
-  scenarios/[id]/review/new/        レビュー投稿（未実装）
-  search/page.tsx                   検索結果（未実装）
-  mypage/avatar/page.tsx            アイコン選択（未実装）
-  terms/ help/ excluded-authors/    静的ページ（未実装）
-  admin/reports/page.tsx            管理画面（未実装）
+  page.tsx                           トップページ
+  login/page.tsx                     ログイン（Google OAuth + Magic Link）
+  auth/callback/route.ts             認証コールバック
+  search/                            検索結果（フィルター・並び替え・ページネーション）
+  mypage/                            マイページ本体・タブ・各種編集コンポーネント・Server Actions
+  mypage/avatar/                     アイコン選択
+  scenarios/new/                     シナリオ登録（ScenarioFormは編集にも流用）
+  scenarios/[id]/page.tsx            シナリオ詳細
+  scenarios/[id]/edit/               シナリオ編集
+  scenarios/[id]/review/new/         レビュー投稿・編集
+  scenarios/[id]/actions.ts          「参考になった」カウント
+  scenarios/[id]/report-actions.ts   レビュー通報・管理者による非表示/却下
+  admin/reports/                     通報管理画面
+  terms/ help/ excluded-authors/     静的ページ
+  api/fetch-ogp/route.ts             頒布ページURLからOGP情報を取得するAPI
 
 components/
   header.tsx                        共通ヘッダー（サーバーコンポーネント・認証状態を表示）
+  mobile-search-toggle.tsx          スマホ用ハンバーガー検索メニュー
+  search-form.tsx                   検索フォーム（ヘッダー・ハンバーガーメニュー共通）
   footer.tsx                        共通フッター
   logout-button.tsx                 ログアウトボタン
-  theme-provider.tsx                テーマ(ライト/ダーク・アクセントカラー)管理
+  favorite-button.tsx               お気に入り追加/解除ボタン
+  avatar-icon.tsx                   アバターアイコン表示
+  theme-provider.tsx                テーマ(ライト/ダーク・アクセントカラー)管理。ログイン中はDBにも保存
   theme-switcher.tsx                テーマ切替UI
+  form-fields.tsx                   フォーム共通部品（Field / TagSelect / ChoiceSelect / LabelSelect）
 
-lib/supabase/
-  client.ts                         ブラウザ用Supabaseクライアント
-  server.ts                         サーバー用Supabaseクライアント
+lib/
+  supabase/client.ts                 ブラウザ用Supabaseクライアント
+  supabase/server.ts                 サーバー用Supabaseクライアント
+  supabase/admin.ts                  service_role用クライアント（アカウント完全削除にのみ使用、任意設定）
+  content-taxonomy.ts                要素タグ・当てはまるタグ・必要サプリメントの定義（全フォーム共通）
+  avatar-options.ts                  アバターのアイコン・カラー選択肢
 
 supabase/migrations/
-  0001_init.sql                     public.usersテーブル + 自動作成トリガー
+  0001_init.sql                      public.usersテーブル + 自動作成トリガー
+  0002_scenarios.sql                 scenariosテーブル
+  0003_reviews.sql                   reviewsテーブル + scenario_statsビュー
+  0004_review_aggregates.sql         要素タグ・当てはまるタグの集計ビュー
+  0005_reports.sql                   reportsテーブル（通報）
+  0006_excluded_authors.sql          掲載不可作者一覧テーブル
+  0007_admin_moderation_policies.sql 管理者によるレビュー/シナリオ更新を許可するRLS
+  0008_favorites.sql                 favoritesテーブル（お気に入り）
+  0009_scenario_delete_policy.sql    シナリオ削除ポリシー（登録者本人・管理者）
+  0010_own_hidden_review_visibility.sql  本人は自分の非公開レビューも閲覧可能に
+  0011_admin_table.sql               管理者フラグをusersから分離(is_admin列の公開API経由の閲覧を防止)
 
-proxy.ts                            Supabase Authのセッション自動更新（Next.js 16のmiddleware）
+proxy.ts                             Supabase Authのセッション自動更新（Next.js 16のmiddleware）
 ```
 
 ## 認証の実装状況
 
-Google OAuth ＋ メールMagic Linkの両方が実装済みです。
+Google OAuth ＋ メールMagic Linkの両方が実装済みです。設定手順は`SETUP_GUIDE.md`の「2. Googleログインを有効にする」を参照してください。
 
-1. `app/login/page.tsx` … ログイン画面。Googleボタン、またはメールアドレス入力でリンク送信
-2. `app/auth/callback/route.ts` … 認証完了後、コードをセッションに交換して元のページへリダイレクト
-3. `components/header.tsx` … ログイン中はマイページリンク＋ログアウト、未ログインならログインボタンを表示
-4. `app/mypage/page.tsx` … 未ログイン時は`/login?next=/mypage`へ自動リダイレクトする例を実装済み
+## マイページの実装状況
 
-### Supabase側で必要な設定
+`app/mypage/` 以下に実装しています。
 
-1. `supabase/migrations/0001_init.sql` をSQL Editorで実行（`public.users`テーブルと自動作成トリガーを作成）
-2. Authentication > Providers で **Google** を有効化し、Google Cloud Consoleで発行したクライアントID/シークレットを設定
-3. Authentication > URL Configuration の **Redirect URLs** に以下を追加
-   - 開発時: `http://localhost:3000/auth/callback`
-   - 本番: `https://<本番ドメイン>/auth/callback`
-4. Authentication > Providers > Email で **Magic Link（OTPログイン）** が有効になっていることを確認（デフォルトで有効）
+- プロフィールヘッダー：アイコン・表示名・統計（投稿レビュー数／好きなシナリオ数／参考になった合計）、「好きな傾向」タグのインライン編集
+- タブ：投稿したレビュー／好きなシナリオ／登録したシナリオ／アカウント設定（`mypage-tabs.tsx`）
+- アカウント設定：表示名の変更、ログイン方法の表示、テーマ切替、アカウント削除
+- `actions.ts` に主要なServer Actionをまとめています（表示名・好みタグ・アイコン変更、レビュー/シナリオ/お気に入りの削除、アカウント削除）
 
-各「未実装」ページには、対応する `/mnt/user-data/outputs/*.html` のモックアップファイル名をコメントで記載しています。デザイントークン（色・余白）は `app/globals.css` に定義済みなので、Tailwindのユーティリティクラス（`bg-panel`, `text-ink-sub`, `border-line` 等）でモックアップの見た目をそのまま再現できます。
+### アカウント削除について
 
-## テーマ機能について
+投稿したレビュー・登録したシナリオ・お気に入りは常に削除されます。ログイン情報（`auth.users`）自体も完全に削除したい場合は、`.env.local`に`SUPABASE_SERVICE_ROLE_KEY`を設定してください（`lib/supabase/admin.ts`）。未設定の場合はプロフィールを匿名化してサインアウトするのみに留まります。
 
-`components/theme-provider.tsx` で、ライト/ダークモードとアクセントカラー（8色）を管理しています。
+## 検索機能の実装状況
 
-- 現状は `localStorage` にのみ保存（無料・実装コストゼロ）
-- ログイン機能の実装後、`users` テーブルに `theme_mode` / `theme_color` カラムを追加すれば、別端末でも同じ見た目を復元できるように拡張可能（`theme-provider.tsx` 内にTODOコメントあり）
+`app/search/` に実装しています。
 
-トップページ（`app/page.tsx`）下部に動作確認用のテーマ切替UIを仮設置しています。他の実装が進んだら削除してください。
+- キーワード検索（タイトル・作者名・サークル名の部分一致）
+- 絞り込み：対応版／必要サプリメント／プレイ人数／プレイ時間／価格（無料・有料）／タグ4カテゴリ
+- 並び替え：評価が高い順／新着順／レビューが多い順／プレイ時間が短い順
+- 20件ごとのページネーション、アクティブなフィルターのチップ表示・一括解除
 
-## シナリオ登録機能の実装状況
+フィルターはチェックボックスの変更で自動的にフォーム送信される作り（`search-filters-form.tsx`）ですが、`<form method="get">`をベースにしているためJavaScriptが無効でも「絞り込む」ボタンから動作します。
 
-実装済みです（`app/scenarios/new/`）。
+## セキュリティについて
 
-1. `page.tsx` … 認証ガード付きページ本体
-2. `scenario-form.tsx` … フォーム本体（クライアントコンポーネント）。BOOTHのOGP自動取得、タグ・必要サプリメントの複数選択に対応
-3. `actions.ts` … Server Action。`scenarios`テーブルへのinsertを行い、登録後は詳細ページへリダイレクト
-4. `app/api/fetch-ogp/route.ts` … 頒布ページURLからog:title / og:image / og:descriptionを取得するAPI（現状`booth.pm`のみ許可、他サイトを増やす場合は`ALLOWED_HOSTS`に追加）
-5. `app/scenarios/[id]/page.tsx` … 登録したシナリオを実際に表示する簡易版詳細ページ（本格的なデザインは`scenario_detail.html`から移植が必要）
+- **管理者フラグの分離**：`is_admin`は`public.users`ではなく、公開APIから直接読み取れない`public.admins`テーブルで管理しています（`0011_admin_table.sql`）。判定は`public.is_admin()`（SECURITY DEFINER関数）経由のみで行い、`anon`キーで管理者一覧を直接列挙できないようにしています
+- **オープンリダイレクト対策**：ログイン後の遷移先(`next`パラメータ)は`app/login/page.tsx`と`app/auth/callback/route.ts`の`sanitizeNext()`で、同一オリジンの相対パスのみに制限しています
+- **管理者操作の二重チェック**：`/admin/reports`のページ・Server Actionの両方で、RLSに加えてアプリ側でも`is_admin()`を呼んで管理者かどうかを確認しています（RLSだけに依存しない）
+- **OGP取得のSSRF対策**：`app/api/fetch-ogp/route.ts`は取得先ドメインを`booth.pm`のみに限定するアローリストを実装済みです
+- **セキュリティヘッダー**：`next.config.ts`でクリックジャッキング対策(`X-Frame-Options`)等の基本ヘッダーを全ページに付与しています
+- Google OAuthはSupabase(`@supabase/ssr`)がPKCEフローを標準で使用するため、認可コード横取り攻撃への対策は組み込み済みです
 
-### Supabase側で追加が必要な設定
+## 既知の制約・今後の拡張候補
 
-`supabase/migrations/0002_scenarios.sql` をSQL Editorで実行し、`scenarios`テーブルを作成してください。
-
-## レビュー投稿機能の実装状況
-
-実装済みです（`app/scenarios/[id]/review/new/`）。
-
-1. `page.tsx` … 認証ガード＋対象シナリオの取得
-2. `review-form.tsx` … フォーム本体。HTMLモックアップ(`review_form.html`)の全設問を移植済み
-   - プレイした立場／プレイ形式／総合評価（おすすめ・おすすめしないボタン）
-   - シナリオの改変（選択で内訳チップが展開）
-   - シナリオの特徴（戦闘の激しさは`scenario.has_combat`がtrueの時だけ表示、立場に応じて「KP進行の負担」⇔「PCの動かしやすさ」の表記が切り替わる）
-   - 追加の評価（またやりたいか／注意書きの妥当性→不十分な場合は要素タグが展開／価格の妥当性は有料シナリオのみ表示）
-   - 引用・参考元について（「引っかかりを感じた」を選ぶと補足欄が展開）
-   - 生成AIの使用について
-   - 別の参加者だったら楽しめたか
-   - 良かった点（必須）／気になった点／ネタバレ感想／改変のアドバイス
-   - タグ（4カテゴリ・26種類）
-3. `actions.ts` … Server Action。`reviews`テーブルへupsert（同じユーザーが同じシナリオに複数回投稿しても1件に上書きされる設計）
-
-`components/form-fields.tsx`に、この後の他フォーム実装でも使い回せる共通部品（`Field` / `TagSelect` / `ChoiceSelect` / `LabelSelect`）を切り出しています。
-
-### Supabase側で追加が必要な設定
-
-`supabase/migrations/0003_reviews.sql` をSQL Editorで実行してください。`reviews`テーブルに加えて、シナリオごとの集計（おすすめ率・プレイ形式の内訳等）をまとめた`scenario_stats`ビューも作成されます。`scenario_detail.html`本来のデザインを移植する際は、このビューをそのまま使えます。
-
-## シナリオ詳細ページの実装状況
-
-実装済みです（`app/scenarios/[id]/`）。`scenario_stats` / `scenario_element_counts` ビューを実際に繋ぎ込んでいます。
-
-- おすすめ度サマリー（%表示、レビュー件数）… レビューが0件の場合は「まだレビューがありません」の空状態を表示
-- 特徴バッジ（探索の難しさ／進行・操作の負担／戦闘の激しさ）… レビューの多数決（`mode()`）で表示、`has_combat=false`のシナリオでは戦闘バッジ自体が出ない
-- 要素タグ集計… カテゴリごとにグルーピングして表示（`lib/content-taxonomy.ts`のカテゴリ定義を利用）
-- レビュー一覧… 「高評価のみ／気になる点も含む」のフィルタタブ（`review-list.tsx`）、スポイラー開閉・参考になったボタンは実際に動作（`review-card.tsx` + `actions.ts`）
-
-`lib/content-taxonomy.ts`に要素タグ・当てはまるタグ・必要サプリメントの定義を一元化し、登録フォーム・レビューフォーム・詳細ページの3箇所で使い回しています。
-
-### 未実装・簡略化している部分
-
-- 「参考になった」は同じ人が連打すると際限なく増える簡易実装（`actions.ts`にコメントで拡張方法を記載）
-- 通報ボタンは見た目のみ（`admin/reports`と合わせて後日実装）
-- 引用・参考元／生成AIの集計バー（`scenario_stats`ビューには集計カラムを用意済みだが、詳細ページ側の表示はまだ）
-
-## 通報機能の実装状況
-
-実装済みです。
-
-- レビューカードの「通報する」をクリックすると理由選択フォームが展開し、実際に`reports`テーブルへ登録されます（`app/scenarios/[id]/report-actions.ts`, `review-card.tsx`）
-- 同じ人が同じレビューを二重通報できないよう、DB側でunique制約
-- `/admin/reports`は`users.is_admin = true`のユーザーのみアクセス可能（それ以外はトップへリダイレクト）。未対応の通報一覧を表示し、「レビューを非表示にする」「却下する」をその場で実行できます
-
-### Supabase側で追加が必要な設定
-
-1. `supabase/migrations/0005_reports.sql` を実行
-2. 動作確認用に、自分のアカウントを管理者にする場合はSQL Editorで以下を実行
-   ```sql
-   update public.users set is_admin = true where id = '（自分のuser id）';
-   ```
-
-## 次にやること（推奨順）
-
-1. ~~Supabaseプロジェクトを作成し、`implementation_spec.md` のテーブル定義でDBを構築~~
-2. ~~認証（Google OAuth + Magic Link）を実装~~ → 完了
-3. ~~シナリオ登録機能を実装~~ → 完了
-4. ~~レビュー投稿機能を実装~~ → 完了
-5. ~~シナリオ詳細ページを本格実装~~ → 完了（引用元・AI集計バーは未接続）
-6. ~~レビューへの通報機能~~ → 完了
-7. 検索・マイページ・アイコン選択などの残りページを移植
-
-## 既知の制約
-
-- このNext.jsプロジェクトはビルド用サンドボックス環境で作成しました。`next/font/google` によるNoto Sans JPの取得は、外部ネットワーク制限のあるこの環境ではビルド時に失敗しますが、**Vercel上では問題なく取得できます**。ローカル開発時にネットワーク制限のある環境でエラーが出た場合は、一時的にシステムフォントに切り替えて動作確認してください。
+- 「参考になった」は同じ人が連打すると際限なく増える簡易実装（`scenarios/[id]/actions.ts`にコメントで拡張方法を記載）
+- 検索の「プレイ時間が短い順」は`play_time`がテキスト項目のため、決め打ちの順序配列でソートしている簡易実装
+- お気に入り一覧は現状「自分だけ」が見られる設計（他人のマイページを公開する機能自体が未実装のため）。将来的に公開プロフィールページを作る場合は`favorites`テーブルのSELECTポリシーを緩める必要がある
+- このNext.jsプロジェクトはビルド用サンドボックス環境で作成しました。`next/font/google` によるNoto Sans JPの取得は、外部ネットワーク制限のあるこの環境ではビルド時に失敗しますが、**Vercel上では問題なく取得できます**

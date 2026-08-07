@@ -13,30 +13,68 @@ type Scenario = {
   price_text: string;
 };
 
+type ExistingReview = {
+  role: string;
+  play_format: string;
+  recommend: boolean;
+  modification: string;
+  modification_details: string[] | null;
+  modification_advice: string | null;
+  exploration_difficulty: string | null;
+  combat_intensity: string | null;
+  kp_or_pc_load: string | null;
+  replay_intention: string | null;
+  group_dependency: string | null;
+  session_note: string | null;
+  content_warning_adequacy: string | null;
+  homage_answer: string | null;
+  homage_note: string | null;
+  ai_usage_answer: string | null;
+  price_fairness: string | null;
+  good_point: string;
+  concern_point: string | null;
+  spoiler_text: string | null;
+  elements: string[] | null;
+  tags: string[] | null;
+};
+
 const initialState: CreateReviewState = {};
 
-export function ReviewForm({ scenario }: { scenario: Scenario }) {
+export function ReviewForm({
+  scenario,
+  existingReview,
+}: {
+  scenario: Scenario;
+  existingReview?: ExistingReview | null;
+}) {
   const boundAction = createReview.bind(null, scenario.id);
   const [state, formAction, isPending] = useActionState(boundAction, initialState);
 
-  const [role, setRole] = useState("pl");
-  const [playFormat, setPlayFormat] = useState("text");
-  const [recommend, setRecommend] = useState("yes");
-  const [modification, setModification] = useState("none");
-  const [modDetails, setModDetails] = useState<Set<string>>(new Set());
-  const [homage, setHomage] = useState("none");
-  const [ai, setAi] = useState("no");
-  const [groupDep, setGroupDep] = useState("scenario");
-  const [cwAdequacy, setCwAdequacy] = useState("adequate");
-  const [elements, setElements] = useState<Set<string>>(new Set());
-  const [tags, setTags] = useState<Set<string>>(new Set());
-  const [explorationDiff, setExplorationDiff] = useState("normal");
-  const [combatIntensity, setCombatIntensity] = useState("light");
-  const [load, setLoad] = useState("normal");
-  const [replay, setReplay] = useState("yes");
-  const [priceFairness, setPriceFairness] = useState("fair");
+  const [role, setRole] = useState(existingReview?.role ?? "pl");
+  const [playFormat, setPlayFormat] = useState(existingReview?.play_format ?? "text");
+  const [recommend, setRecommend] = useState(existingReview?.recommend === false ? "no" : "yes");
+  const [modification, setModification] = useState(existingReview?.modification ?? "none");
+  const [modDetails, setModDetails] = useState<Set<string>>(
+    new Set(existingReview?.modification_details ?? [])
+  );
+  const [homage, setHomage] = useState(existingReview?.homage_answer ?? "none");
+  const [ai, setAi] = useState(existingReview?.ai_usage_answer ?? "no");
+  const [groupDep, setGroupDep] = useState(existingReview?.group_dependency ?? "scenario");
+  const [cwAdequacy, setCwAdequacy] = useState(existingReview?.content_warning_adequacy ?? "adequate");
+  const [elements, setElements] = useState<Set<string>>(new Set(existingReview?.elements ?? []));
+  const [tags, setTags] = useState<Set<string>>(new Set(existingReview?.tags ?? []));
+  const [explorationDiff, setExplorationDiff] = useState(
+    existingReview?.exploration_difficulty ?? "normal"
+  );
+  const [combatIntensity, setCombatIntensity] = useState(
+    existingReview?.combat_intensity ?? "light"
+  );
+  const [load, setLoad] = useState(existingReview?.kp_or_pc_load ?? "normal");
+  const [replay, setReplay] = useState(existingReview?.replay_intention ?? "yes");
+  const [priceFairness, setPriceFairness] = useState(existingReview?.price_fairness ?? "fair");
 
   const isPaid = scenario.price_text !== "無料";
+  const isEdit = !!existingReview;
 
   const toggle = (set: Set<string>, setSet: (s: Set<string>) => void, value: string) => {
     const next = new Set(set);
@@ -134,7 +172,12 @@ export function ReviewForm({ scenario }: { scenario: Scenario }) {
 
       {/* 改変のアドバイス */}
       <Section title="改変のアドバイス" optional desc="改変した点や、改変をおすすめしたい点があれば書いてください。次にKPを務める人の参考になります。">
-        <textarea name="modificationAdvice" rows={3} className={inputClass} />
+        <textarea
+          name="modificationAdvice"
+          defaultValue={existingReview?.modification_advice ?? ""}
+          rows={3}
+          className={inputClass}
+        />
       </Section>
 
       {/* シナリオの特徴 */}
@@ -270,7 +313,12 @@ export function ReviewForm({ scenario }: { scenario: Scenario }) {
         {homage === "concerning" && (
           <div className="mt-4 rounded-lg bg-bg p-4">
             <div className="mb-2 text-xs font-medium">思い当たる作品があれば教えてください</div>
-            <input name="homageNote" placeholder="例：〇〇というドラマ／小説 など" className={inputClass} />
+            <input
+                  name="homageNote"
+                  defaultValue={existingReview?.homage_note ?? ""}
+                  placeholder="例：〇〇というドラマ／小説 など"
+                  className={inputClass}
+                />
           </div>
         )}
       </Section>
@@ -305,23 +353,44 @@ export function ReviewForm({ scenario }: { scenario: Scenario }) {
           <label className="mb-1.5 block text-[11px] text-ink-faint">
             セッションならではの良さがあれば（任意）
           </label>
-          <input name="sessionNote" placeholder="例：KPのアドリブが上手く、雰囲気作りが良かった" className={inputClass} />
+          <input
+            name="sessionNote"
+            defaultValue={existingReview?.session_note ?? ""}
+            placeholder="例：KPのアドリブが上手く、雰囲気作りが良かった"
+            className={inputClass}
+          />
         </div>
       </Section>
 
       {/* 良かった点 */}
       <Section title="良かった点" required desc="ネタバレを含まない範囲で、良かった点や向いているプレイヤー像などを書いてください。">
-        <textarea name="goodPoint" required rows={5} className={inputClass} />
+        <textarea
+          name="goodPoint"
+          required
+          defaultValue={existingReview?.good_point ?? ""}
+          rows={5}
+          className={inputClass}
+        />
       </Section>
 
       {/* 気になった点 */}
       <Section title="気になった点" optional desc="空欄でも投稿できます。">
-        <textarea name="concernPoint" rows={4} className={inputClass} />
+        <textarea
+          name="concernPoint"
+          defaultValue={existingReview?.concern_point ?? ""}
+          rows={4}
+          className={inputClass}
+        />
       </Section>
 
       {/* ネタバレ */}
       <Section title="ネタバレ感想を追加する" optional desc="この欄に書いた内容は「ネタバレを見る」を押した人にだけ表示されます。">
-        <textarea name="spoilerText" rows={4} className={inputClass} />
+        <textarea
+          name="spoilerText"
+          defaultValue={existingReview?.spoiler_text ?? ""}
+          rows={4}
+          className={inputClass}
+        />
       </Section>
 
       {/* タグ */}
@@ -348,13 +417,15 @@ export function ReviewForm({ scenario }: { scenario: Scenario }) {
       )}
 
       <div className="flex items-center justify-between pt-1">
-        <span className="text-xs text-ink-faint">投稿後も内容の編集はいつでもできます。</span>
+        <span className="text-pretty text-xs text-ink-faint">
+          {isEdit ? "この内容で上書き保存します。" : "投稿後も内容の編集はいつでもできます。"}
+        </span>
         <button
           type="submit"
           disabled={isPending}
           className="rounded-md bg-accent px-7 py-2.5 text-[13px] text-white disabled:opacity-60"
         >
-          {isPending ? "投稿中…" : "レビューを投稿する"}
+          {isPending ? "保存中…" : isEdit ? "レビューを更新する" : "レビューを投稿する"}
         </button>
       </div>
     </form>
