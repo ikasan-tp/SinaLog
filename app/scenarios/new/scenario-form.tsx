@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { createScenario, type CreateScenarioState } from "@/app/scenarios/new/actions";
 import { updateScenario } from "@/app/scenarios/[id]/edit/actions";
-import { TAG_GROUPS, SUPPLEMENTS } from "@/lib/content-taxonomy";
+import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS, SESSION_FORMAT_OPTIONS } from "@/lib/content-taxonomy";
+import { CollapsibleTagGroup } from "@/components/collapsible-tag-group";
 
 type OgpResult = { title: string; thumbnailUrl: string; description: string };
 type FetchStatus = "idle" | "loading" | "success" | "error";
@@ -18,6 +19,7 @@ export type ScenarioFormInitialValues = {
   setting: string;
   recommendedPlayers: string;
   playTime: string;
+  sessionFormats: string[];
   hasCombat: boolean;
   wordCount: number | null;
   description: string;
@@ -54,6 +56,9 @@ export function ScenarioForm({
   );
   const [selectedSupplements, setSelectedSupplements] = useState<Set<string>>(
     new Set(initialValues?.requiredSupplements ?? [])
+  );
+  const [selectedSessionFormats, setSelectedSessionFormats] = useState<Set<string>>(
+    new Set(initialValues?.sessionFormats ?? [])
   );
 
   async function handleFetchOgp() {
@@ -212,10 +217,11 @@ export function ScenarioForm({
               className={inputClass}
             >
               <option value="">不明・未設定</option>
-              <option value="1人">1人</option>
-              <option value="1〜3人">1〜3人</option>
-              <option value="2〜3人">2〜3人</option>
-              <option value="4〜5人">4〜5人</option>
+              {PLAYER_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="プレイ時間の目安" optional>
@@ -228,6 +234,18 @@ export function ScenarioForm({
             </select>
           </Field>
         </div>
+
+        <Field label="対応セッション形式" optional>
+          <p className="mb-2 text-[11px] text-ink-faint">
+            このシナリオが想定している、または対応しているセッション形式を選んでください。複数選択できます。
+          </p>
+          <TagSelect
+            options={SESSION_FORMAT_OPTIONS}
+            selected={selectedSessionFormats}
+            onToggle={(v) => toggle(selectedSessionFormats, setSelectedSessionFormats, v)}
+            name="sessionFormats"
+          />
+        </Field>
 
         <Field label="戦闘要素" optional>
           <label className="flex items-center gap-2.5 text-[13px]">
@@ -294,22 +312,43 @@ export function ScenarioForm({
             タグ<span className="ml-1 text-[11px] font-normal text-ink-faint">（任意）</span>
           </label>
           <p className="mb-3 text-[11px] text-ink-faint">
-            当てはまるものを複数選択できます。検索・絞り込みに使われます。
+            当てはまるものを複数選択できます。検索・絞り込みに使われます。カテゴリ名をクリックすると開閉できます。
           </p>
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {TAG_GROUPS.map((group) => (
-              <div key={group.title}>
-                <div className="mb-2 text-[11px] text-ink-faint">{group.title}</div>
+              <CollapsibleTagGroup
+                key={group.title}
+                title={group.title}
+                selectedCount={group.tags.filter((t) => selectedTags.has(t)).length}
+              >
                 <TagSelect
                   options={group.tags}
                   selected={selectedTags}
                   onToggle={(v) => toggle(selectedTags, setSelectedTags, v)}
                   name="tags"
                 />
-              </div>
+              </CollapsibleTagGroup>
             ))}
           </div>
         </div>
+
+        {/* センシティブ要素は「遊んでも大丈夫か」の判断材料になる特別な情報のため、
+            通常タグとは見た目を分けて別枠で選択させる */}
+        <CollapsibleTagGroup
+          title="センシティブ要素（任意）"
+          selectedCount={SENSITIVE_TAGS.filter((t) => selectedTags.has(t)).length}
+          tone="sensitive"
+        >
+          <p className="mb-3 text-[11px] text-[#8A5A1E]">
+            プレイヤーが事前に知っておいたほうがよい要素があれば選んでください。詳細ページでは通常タグと別枠で表示されます。
+          </p>
+          <TagSelect
+            options={SENSITIVE_TAGS}
+            selected={selectedTags}
+            onToggle={(v) => toggle(selectedTags, setSelectedTags, v)}
+            name="tags"
+          />
+        </CollapsibleTagGroup>
       </section>
 
       {state.error && (

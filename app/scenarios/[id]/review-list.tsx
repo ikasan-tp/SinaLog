@@ -8,9 +8,11 @@ type ReviewRow = Parameters<typeof ReviewCard>[0]["review"];
 export function ReviewList({
   reviews,
   scenarioId,
+  isLoggedIn,
 }: {
   reviews: ReviewRow[];
   scenarioId: string;
+  isLoggedIn: boolean;
 }) {
   const [filter, setFilter] = useState<"all" | "low">("all");
 
@@ -38,7 +40,7 @@ export function ReviewList({
         <p className="py-8 text-center text-[13px] text-ink-faint">まだレビューがありません。</p>
       ) : (
         visible.map((review) => (
-          <ReviewCard key={review.id} review={review} scenarioId={scenarioId} />
+          <ReviewCard key={review.id} review={review} scenarioId={scenarioId} isLoggedIn={isLoggedIn} />
         ))
       )}
     </div>

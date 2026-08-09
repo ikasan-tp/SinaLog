@@ -3,32 +3,65 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
+export type ToggleHelpfulResult = {
+  voted: boolean;
+  error?: string;
+};
+
 /**
- * 「参考になった」のカウントアップ。
- * 簡易実装のため、同じ人が何度も押すと際限なく増える。
- * 本格運用する場合は review_helpful_votes(review_id, user_id) の中間テーブルを作り、
- * 既に押したユーザーかどうかをそこで判定する形に拡張するとよい。
+ * 「参考になった」の投票をトグルする(押す→取り消す→また押す、ができる)。
+ *
+ * review_helpful_votes テーブルへの insert/delete で行い、
+ * reviews.helpful_count はDB側のトリガー(0013_review_helpful_votes.sql)が
+ * 自動で同期するため、ここでは直接カウントを操作しない。
+ *
+ * 1ユーザー1レビュー1票・自分のレビューには投票不可、という制約は
+ * RLS(insertポリシー)側でも強制しているため、ここでのチェックは
+ * 分かりやすいエラーメッセージを返すための冗長化。
  */
-export async function markHelpful(reviewId: string, scenarioId: string) {
+export async function toggleHelpful(reviewId: string, scenarioId: string): Promise<ToggleHelpfulResult> {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { voted: false, error: "ログインが必要です" };
 
   const { data: review } = await supabase
     .from("reviews")
-    .select("helpful_count")
+    .select("user_id")
     .eq("id", reviewId)
     .single();
+  if (!review) return { voted: false, error: "レビューが見つかりません" };
+  if (review.user_id === user.id) {
+    return { voted: false, error: "自分のレビューには投票できません" };
+  }
 
-  if (!review) return;
+  const { data: existing } = await supabase
+    .from("review_helpful_votes")
+    .select("review_id")
+    .eq("review_id", reviewId)
+    .eq("voter_id", user.id)
+    .maybeSingle();
 
-  await supabase
-    .from("reviews")
-    .update({ helpful_count: review.helpful_count + 1 })
-    .eq("id", reviewId);
+  if (existing) {
+    const { error } = await supabase
+      .from("review_helpful_votes")
+      .delete()
+      .eq("review_id", reviewId)
+      .eq("voter_id", user.id);
+    if (error) return { voted: true, error: "取り消しに失敗しました" };
+    revalidatePath(`/scenarios/${scenarioId}`);
+    revalidatePath("/mypage");
+    return { voted: false };
+  }
+
+  const { error } = await supabase
+    .from("review_helpful_votes")
+    .insert({ review_id: reviewId, voter_id: user.id });
+  if (error) return { voted: false, error: "投票に失敗しました" };
 
   revalidatePath(`/scenarios/${scenarioId}`);
+  revalidatePath("/mypage");
+  return { voted: true };
 }

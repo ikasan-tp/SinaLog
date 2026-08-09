@@ -28,6 +28,7 @@ type ScenarioRow = {
   price_text: string;
   is_hidden: boolean;
   created_at: string;
+  reviewCount: number;
 };
 
 type Tab = "reviews" | "favorites" | "scenarios" | "settings";
@@ -294,16 +295,20 @@ function ScenariosPanel({ scenarios }: { scenarios: ScenarioRow[] }) {
 function ScenarioRowItem({ scenario }: { scenario: ScenarioRow }) {
   const [isPending, startTransition] = useTransition();
   const [removed, setRemoved] = useState(false);
+  const [error, setError] = useState("");
+
+  const hasReviews = scenario.reviewCount > 0;
 
   function handleDelete() {
-    if (
-      !confirm(
-        "このシナリオの登録情報を削除しますか？関連するレビューも表示されなくなります。この操作は取り消せません。"
-      )
-    )
-      return;
+    if (hasReviews) return;
+    if (!confirm("このシナリオの登録情報を削除しますか？この操作は取り消せません。")) return;
+    setError("");
     startTransition(async () => {
-      await deleteMyScenario(scenario.id);
+      const result = await deleteMyScenario(scenario.id);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
       setRemoved(true);
     });
   }
@@ -311,39 +316,53 @@ function ScenarioRowItem({ scenario }: { scenario: ScenarioRow }) {
   if (removed) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-panel p-4">
-      <div className="min-w-0">
-        <Link href={`/scenarios/${scenario.id}`} className="text-sm font-bold hover:text-accent">
-          {scenario.title}
-        </Link>
-        <div className="mt-1 flex items-center gap-2 text-[11px] text-ink-faint">
-          {scenario.system_version && <span>{scenario.system_version}</span>}
-          <span>{scenario.price_text}</span>
-          {scenario.is_hidden && <span className="text-accent">非公開中</span>}
+    <div className="rounded-lg border border-line bg-panel p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <Link href={`/scenarios/${scenario.id}`} className="text-sm font-bold hover:text-accent">
+            {scenario.title}
+          </Link>
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-ink-faint">
+            {scenario.system_version && <span>{scenario.system_version}</span>}
+            <span>{scenario.price_text}</span>
+            <span>レビュー{scenario.reviewCount}件</span>
+            {scenario.is_hidden && <span className="text-accent">非公開中</span>}
+          </div>
+        </div>
+        <div className="flex flex-shrink-0 gap-2">
+          <Link
+            href={`/scenarios/${scenario.id}`}
+            className="rounded-md border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-sub hover:bg-bg"
+          >
+            ページを見る
+          </Link>
+          <Link
+            href={`/scenarios/${scenario.id}/edit`}
+            className="rounded-md border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-sub hover:bg-bg"
+          >
+            情報を編集
+          </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={isPending || hasReviews}
+            title={hasReviews ? "レビューが投稿されているシナリオは削除できません" : undefined}
+            className="rounded-md border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-sub hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-line-strong disabled:hover:text-ink-sub"
+          >
+            {isPending ? "削除中…" : "削除"}
+          </button>
         </div>
       </div>
-      <div className="flex flex-shrink-0 gap-2">
-        <Link
-          href={`/scenarios/${scenario.id}`}
-          className="rounded-md border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-sub hover:bg-bg"
-        >
-          ページを見る
-        </Link>
-        <Link
-          href={`/scenarios/${scenario.id}/edit`}
-          className="rounded-md border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-sub hover:bg-bg"
-        >
-          情報を編集
-        </Link>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={isPending}
-          className="rounded-md border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-sub hover:border-accent hover:text-accent disabled:opacity-60"
-        >
-          {isPending ? "削除中…" : "削除"}
-        </button>
-      </div>
+      {hasReviews && (
+        <p className="mt-2.5 text-[11px] text-ink-faint">
+          レビューが投稿されているシナリオは削除できません。掲載を停止したい場合は
+          <Link href="/help" className="underline hover:text-accent">
+            ヘルプ
+          </Link>
+          をご確認ください。
+        </p>
+      )}
+      {error && <p className="mt-2.5 text-[11px] text-accent">{error}</p>}
     </div>
   );
 }

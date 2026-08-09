@@ -1,7 +1,10 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { markHelpful } from "./actions";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toggleHelpful } from "./actions";
+import { toggleContextFlag } from "./context-flag-actions";
 import { reportReview, type ReportReviewState } from "./report-actions";
 
 const ROLE_LABEL: Record<string, string> = { pl: "PLとして参加", kp: "KPとして進行" };
@@ -10,6 +13,7 @@ const FORMAT_LABEL: Record<string, string> = { text: "テキセ", voice: "ボイ
 
 type ReviewRow = {
   id: string;
+  user_id: string;
   role: string;
   play_format: string;
   modification: string;
@@ -19,6 +23,10 @@ type ReviewRow = {
   spoiler_text: string | null;
   helpful_count: number;
   created_at: string;
+  isOwnReview: boolean;
+  myVote: boolean;
+  myContextFlag: boolean;
+  contextFlagCount: number;
   users: {
     display_name: string;
     avatar_icon: string;
@@ -26,11 +34,26 @@ type ReviewRow = {
   } | null;
 };
 
-export function ReviewCard({ review, scenarioId }: { review: ReviewRow; scenarioId: string }) {
+export function ReviewCard({
+  review,
+  scenarioId,
+  isLoggedIn,
+}: {
+  review: ReviewRow;
+  scenarioId: string;
+  isLoggedIn: boolean;
+}) {
+  const router = useRouter();
   const [spoilerOpen, setSpoilerOpen] = useState(false);
+
   const [helpfulCount, setHelpfulCount] = useState(review.helpful_count);
-  const [clicked, setClicked] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [voted, setVoted] = useState(review.myVote);
+  const [isVotePending, startVoteTransition] = useTransition();
+
+  const [flagCount, setFlagCount] = useState(review.contextFlagCount);
+  const [flagged, setFlagged] = useState(review.myContextFlag);
+  const [isFlagPending, startFlagTransition] = useTransition();
+
   const [reportOpen, setReportOpen] = useState(false);
 
   const boundReport = reportReview.bind(null, review.id, scenarioId);
@@ -40,11 +63,41 @@ export function ReviewCard({ review, scenarioId }: { review: ReviewRow; scenario
   );
 
   function handleHelpful() {
-    if (clicked) return;
-    setClicked(true);
-    setHelpfulCount((c) => c + 1);
-    startTransition(() => {
-      markHelpful(review.id, scenarioId);
+    if (!isLoggedIn) {
+      router.push(`/login?next=/scenarios/${scenarioId}`);
+      return;
+    }
+    if (review.isOwnReview || isVotePending) return;
+
+    // 楽観的更新。失敗したら元に戻す。
+    const nextVoted = !voted;
+    setVoted(nextVoted);
+    setHelpfulCount((c) => (nextVoted ? c + 1 : Math.max(c - 1, 0)));
+    startVoteTransition(async () => {
+      const result = await toggleHelpful(review.id, scenarioId);
+      if (result.error) {
+        setVoted(voted);
+        setHelpfulCount(review.helpful_count);
+      }
+    });
+  }
+
+  function handleContextFlag() {
+    if (!isLoggedIn) {
+      router.push(`/login?next=/scenarios/${scenarioId}`);
+      return;
+    }
+    if (review.isOwnReview || isFlagPending) return;
+
+    const nextFlagged = !flagged;
+    setFlagged(nextFlagged);
+    setFlagCount((c) => (nextFlagged ? c + 1 : Math.max(c - 1, 0)));
+    startFlagTransition(async () => {
+      const result = await toggleContextFlag(review.id, scenarioId);
+      if (result.error) {
+        setFlagged(flagged);
+        setFlagCount(review.contextFlagCount);
+      }
     });
   }
 
@@ -53,7 +106,7 @@ export function ReviewCard({ review, scenarioId }: { review: ReviewRow; scenario
   return (
     <div className="border-b border-line py-4.5 py-[18px] last:border-0">
       <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href={`/u/${review.user_id}`} className="flex items-center gap-2 hover:opacity-80">
           <div
             className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold"
             style={{
@@ -65,7 +118,7 @@ export function ReviewCard({ review, scenarioId }: { review: ReviewRow; scenario
           </div>
           <span className="text-[13px] font-medium">{review.users?.display_name ?? "名無しの探索者"}</span>
           <span className="text-[11px] text-ink-faint">{date}</span>
-        </div>
+        </Link>
         <span
           className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
             review.recommend ? "bg-ok-bg text-ok" : "bg-accent-bg text-accent"
@@ -115,22 +168,43 @@ export function ReviewCard({ review, scenarioId }: { review: ReviewRow; scenario
         </div>
       )}
 
-      <div className="mt-3 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleHelpful}
-          disabled={clicked || isPending}
-          className={`flex items-center gap-1.5 text-xs ${
-            clicked ? "text-link" : "text-ink-faint hover:text-ink-sub"
-          }`}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 10v11" />
-            <path d="M2 10h4v11H2V10Z" />
-            <path d="M7 10l3-8a2 2 0 0 1 2 2v5h6.3a2 2 0 0 1 2 2.4l-1.5 7A2 2 0 0 1 17 21H7" />
-          </svg>
-          参考になった（{helpfulCount}）
-        </button>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={handleHelpful}
+            disabled={review.isOwnReview || isVotePending}
+            title={review.isOwnReview ? "自分のレビューには投票できません" : undefined}
+            className={`flex items-center gap-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50 ${
+              voted ? "text-link" : "text-ink-faint hover:text-ink-sub"
+            }`}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill={voted ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 10v11" />
+              <path d="M2 10h4v11H2V10Z" />
+              <path d="M7 10l3-8a2 2 0 0 1 2 2v5h6.3a2 2 0 0 1 2 2.4l-1.5 7A2 2 0 0 1 17 21H7" />
+            </svg>
+            参考になった（{helpfulCount}）
+          </button>
+
+          <button
+            type="button"
+            onClick={handleContextFlag}
+            disabled={review.isOwnReview || isFlagPending}
+            title={
+              review.isOwnReview
+                ? "自分のレビューには使えません"
+                : "このレビューの評価は、シナリオ自体よりKP・卓環境・参加者などプレイ状況の影響が大きいかもしれない、と感じたときに"
+            }
+            className={`flex items-center gap-1 text-[11px] disabled:cursor-not-allowed disabled:opacity-50 ${
+              flagged ? "text-[#8A5A1E]" : "text-ink-faint hover:text-ink-sub"
+            }`}
+          >
+            シナリオ以外の要因が大きそう
+            {flagCount > 0 && <span className="text-ink-faint">（{flagCount}）</span>}
+          </button>
+        </div>
+
         {!reportState.success && (
           <button
             type="button"

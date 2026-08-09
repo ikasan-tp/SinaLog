@@ -9,6 +9,7 @@ import { TAG_GROUPS } from "@/lib/content-taxonomy";
 import { MypageTabs } from "./mypage-tabs";
 import { TasteTagsEditor } from "./taste-tags-editor";
 import { DisplayNameEditor } from "./display-name-editor";
+import { BioEditor } from "./bio-editor";
 import { DeleteAccountButton } from "./delete-account-button";
 
 export default async function MypagePage() {
@@ -20,11 +21,11 @@ export default async function MypagePage() {
 
   if (!user) redirect("/login?next=/mypage");
 
-  const [{ data: profile }, { data: reviews }, { data: favorites }, { data: scenarios }] =
+  const [{ data: profile }, { data: reviews }, { data: favorites }, { data: scenarios }, { data: reputation }] =
     await Promise.all([
       supabase
         .from("users")
-        .select("display_name, avatar_icon, avatar_color, taste_tags, created_at")
+        .select("display_name, avatar_icon, avatar_color, taste_tags, bio, created_at")
         .eq("id", user.id)
         .single(),
       supabase
@@ -44,13 +45,31 @@ export default async function MypagePage() {
         .select("id, title, system_version, price_text, is_hidden, created_at")
         .eq("registered_by", user.id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("user_review_reputation")
+        .select("review_count, helpful_total")
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
 
   if (!profile) redirect("/login?next=/mypage");
 
+  // 登録したシナリオそれぞれのレビュー件数(1件でもあれば本人は削除できない仕様のため、UIに反映する)
+  const scenarioIds = (scenarios ?? []).map((s) => s.id);
+  const { data: scenarioStatsRows } =
+    scenarioIds.length > 0
+      ? await supabase.from("scenario_stats").select("scenario_id, review_count").in("scenario_id", scenarioIds)
+      : { data: [] as { scenario_id: string; review_count: number }[] };
+  const scenarioReviewCounts = new Map((scenarioStatsRows ?? []).map((s) => [s.scenario_id, s.review_count]));
+  const scenariosWithReviewCount = (scenarios ?? []).map((s) => ({
+    ...s,
+    reviewCount: scenarioReviewCounts.get(s.id) ?? 0,
+  }));
+
   const reviewCount = reviews?.length ?? 0;
   const favoriteCount = favorites?.length ?? 0;
-  const helpfulReceived = (reviews ?? []).reduce((sum, r) => sum + (r.helpful_count ?? 0), 0);
+  // 非公開(通報等でis_hidden=trueになった)レビューの分は貢献度に含めない集計ビューを使う
+  const helpfulReceived = reputation?.helpful_total ?? 0;
   const joinedYear = new Date(profile.created_at).getFullYear();
   const joinedMonth = new Date(profile.created_at).getMonth() + 1;
 
@@ -81,18 +100,30 @@ export default async function MypagePage() {
                 </div>
               </div>
             </div>
-            <Link
-              href="/mypage/avatar"
-              className="rounded-md border border-line-strong px-4 py-2 text-xs text-ink-sub hover:bg-bg"
-            >
-              アイコンを変更
-            </Link>
+            <div className="flex flex-shrink-0 gap-2">
+              <Link
+                href={`/u/${user.id}`}
+                className="rounded-md border border-line-strong px-4 py-2 text-xs text-ink-sub hover:bg-bg"
+              >
+                公開プロフィールを見る
+              </Link>
+              <Link
+                href="/mypage/avatar"
+                className="rounded-md border border-line-strong px-4 py-2 text-xs text-ink-sub hover:bg-bg"
+              >
+                アイコンを変更
+              </Link>
+            </div>
           </div>
 
           <div className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-5 text-center">
             <Stat label="投稿レビュー" value={reviewCount} />
             <Stat label="好きなシナリオ" value={favoriteCount} />
             <Stat label="参考になった" value={helpfulReceived} />
+          </div>
+
+          <div className="mt-6 border-t border-line pt-5">
+            <BioEditor initialBio={profile.bio ?? ""} />
           </div>
 
           <div className="mt-6 border-t border-line pt-5">
@@ -103,7 +134,7 @@ export default async function MypagePage() {
         <MypageTabs
           reviews={normalizeReviews(reviews)}
           favorites={normalizeFavorites(favorites)}
-          scenarios={scenarios ?? []}
+          scenarios={scenariosWithReviewCount}
           settingsContent={
             <div className="space-y-5">
               <div className="rounded-xl border border-line bg-panel p-6">

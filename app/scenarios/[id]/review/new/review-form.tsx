@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { createReview, type CreateReviewState } from "./actions";
 import { TagSelect, ChoiceSelect, LabelSelect, inputClass } from "@/components/form-fields";
+import { CollapsibleTagGroup } from "@/components/collapsible-tag-group";
 import { ELEMENT_GROUPS, MODIFICATION_DETAIL_OPTIONS, TAG_GROUPS } from "@/lib/content-taxonomy";
 
 type Scenario = {
@@ -263,17 +264,20 @@ export function ReviewForm({
                 <p className="mb-3 text-[11px] text-ink-faint">
                   内容の核心（誰が・何が・どうなるか）には触れず、種類だけを選んでください。
                 </p>
-                <div className="space-y-3.5">
+                <div className="space-y-2.5">
                   {ELEMENT_GROUPS.map((g) => (
-                    <div key={g.title}>
-                      <div className="mb-1.5 text-[11px] text-ink-faint">{g.title}</div>
+                    <CollapsibleTagGroup
+                      key={g.title}
+                      title={g.title}
+                      selectedCount={g.items.filter((t) => elements.has(t)).length}
+                    >
                       <TagSelect
                         options={g.items}
                         selected={elements}
                         onToggle={(v) => toggle(elements, setElements, v)}
                         name="elements"
                       />
-                    </div>
+                    </CollapsibleTagGroup>
                   ))}
                 </div>
               </div>
@@ -394,18 +398,21 @@ export function ReviewForm({
       </Section>
 
       {/* タグ */}
-      <Section title="当てはまるタグ" optional desc="複数選択できます。">
-        <div className="space-y-4">
+      <Section title="当てはまるタグ" optional desc="複数選択できます。カテゴリ名をクリックすると開閉できます。">
+        <div className="space-y-2.5">
           {TAG_GROUPS.map((g) => (
-            <div key={g.title}>
-              <div className="mb-2 text-[11px] text-ink-faint">{g.title}</div>
+            <CollapsibleTagGroup
+              key={g.title}
+              title={g.title}
+              selectedCount={g.tags.filter((t) => tags.has(t)).length}
+            >
               <TagSelect
                 options={g.tags}
                 selected={tags}
                 onToggle={(v) => toggle(tags, setTags, v)}
                 name="tags"
               />
-            </div>
+            </CollapsibleTagGroup>
           ))}
         </div>
       </Section>

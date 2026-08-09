@@ -11,9 +11,25 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "シナログ┃TRPGシナリオレビュー",
+  title: {
+    default: "シナログ┃TRPGシナリオレビュー",
+    template: "%s｜シナログ",
+  },
   description:
     "クトゥルフ神話TRPGシナリオのレビューサイト「シナログ」。プレイ前に知っておきたい要素や、おすすめ度をレビュアーの回答から確認できます。",
+  openGraph: {
+    siteName: "シナログ（Sinalog）",
+    title: "シナログ┃TRPGシナリオレビュー",
+    description:
+      "クトゥルフ神話TRPGシナリオのレビューサイト「シナログ」。実際に遊んだ人の声で、次に遊ぶ一本を選べます。",
+    type: "website",
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary",
+    title: "シナログ┃TRPGシナリオレビュー",
+    description: "クトゥルフ神話TRPGシナリオのレビューサイト。実際に遊んだ人の声で、次に遊ぶ一本を選べます。",
+  },
 };
 
 // ページ描画前にlocalStorageのテーマを読み、<html>に反映する。

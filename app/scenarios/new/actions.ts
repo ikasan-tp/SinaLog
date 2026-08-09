@@ -35,6 +35,7 @@ export async function createScenario(
 
   const tags = formData.getAll("tags") as string[];
   const requiredSupplements = formData.getAll("requiredSupplements") as string[];
+  const sessionFormats = formData.getAll("sessionFormats") as string[];
   const wordCountRaw = formData.get("wordCount") as string;
 
   const { data, error } = await supabase
@@ -49,6 +50,7 @@ export async function createScenario(
       setting: (formData.get("setting") as string) || null,
       recommended_players: (formData.get("recommendedPlayers") as string) || null,
       play_time: (formData.get("playTime") as string) || null,
+      session_formats: sessionFormats,
       has_combat: formData.get("hasCombat") === "on",
       word_count: wordCountRaw ? parseInt(wordCountRaw, 10) || null : null,
       description: (formData.get("description") as string) || null,

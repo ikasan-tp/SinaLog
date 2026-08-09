@@ -37,6 +37,28 @@ export async function updateDisplayName(
   if (error) return { error: "変更に失敗しました。時間をおいて再度お試しください。" };
 
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
+  return { success: true };
+}
+
+/** 自己紹介の変更(公開マイページに表示される) */
+export async function updateBio(_prevState: { error?: string; success?: boolean }, formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const bio = (formData.get("bio") as string)?.trim() ?? "";
+
+  if (bio.length > 300) {
+    return { error: "自己紹介は300文字以内で入力してください。" };
+  }
+
+  const { error } = await supabase
+    .from("users")
+    .update({ bio: bio || null })
+    .eq("id", user.id);
+
+  if (error) return { error: "変更に失敗しました。時間をおいて再度お試しください。" };
+
+  revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
   return { success: true };
 }
 
@@ -45,6 +67,7 @@ export async function updateTasteTags(tags: string[]) {
   const { supabase, user } = await requireUser();
   await supabase.from("users").update({ taste_tags: tags }).eq("id", user.id);
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
 }
 
 /** アイコン・カラーの変更(アイコン選択ページから呼ぶ) */
@@ -55,6 +78,7 @@ export async function updateAvatar(icon: string, color: string) {
     .update({ avatar_icon: icon, avatar_color: color })
     .eq("id", user.id);
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
   redirect("/mypage");
 }
 
@@ -63,17 +87,42 @@ export async function deleteMyReview(reviewId: string) {
   const { supabase, user } = await requireUser();
   await supabase.from("reviews").delete().eq("id", reviewId).eq("user_id", user.id);
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
+  revalidatePath(`/u/${user.id}/reviews`);
 }
 
 /** 自分が登録したシナリオを削除 */
-export async function deleteMyScenario(scenarioId: string) {
+/**
+ * 自分が登録したシナリオを削除。
+ * レビューが1件でも投稿されている場合は削除できない
+ * (RLS側の削除ポリシーでも同じ条件を強制しているため、ここでのチェックは
+ * 分かりやすいエラーメッセージを返すための冗長化。万一ここを通過しても
+ * DB側で弾かれ、他人のレビューが巻き込まれて消えることはない)。
+ */
+export async function deleteMyScenario(scenarioId: string): Promise<{ error?: string }> {
   const { supabase, user } = await requireUser();
-  await supabase
+
+  const { count } = await supabase
+    .from("reviews")
+    .select("id", { count: "exact", head: true })
+    .eq("scenario_id", scenarioId);
+
+  if ((count ?? 0) > 0) {
+    return { error: "レビューが投稿されているシナリオは削除できません。" };
+  }
+
+  const { error } = await supabase
     .from("scenarios")
     .delete()
     .eq("id", scenarioId)
     .eq("registered_by", user.id);
+
+  if (error) {
+    return { error: "削除に失敗しました。時間をおいて再度お試しください。" };
+  }
+
   revalidatePath("/mypage");
+  return {};
 }
 
 /** お気に入りの追加・解除を切り替える(シナリオ詳細ページから呼ぶ) */
@@ -99,6 +148,7 @@ export async function toggleFavorite(scenarioId: string) {
 
   revalidatePath(`/scenarios/${scenarioId}`);
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
 }
 
 /** お気に入りの一言メモを更新 */
@@ -110,6 +160,7 @@ export async function updateFavoriteNote(scenarioId: string, note: string) {
     .eq("user_id", user.id)
     .eq("scenario_id", scenarioId);
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
 }
 
 /** お気に入りから削除 */
@@ -121,6 +172,7 @@ export async function removeFavorite(scenarioId: string) {
     .eq("user_id", user.id)
     .eq("scenario_id", scenarioId);
   revalidatePath("/mypage");
+  revalidatePath(`/u/${user.id}`);
 }
 
 /**
@@ -149,6 +201,7 @@ export async function deleteAccount() {
         avatar_icon: "cat",
         avatar_color: "#6B675E",
         taste_tags: [],
+        bio: null,
       })
       .eq("id", user.id);
   }

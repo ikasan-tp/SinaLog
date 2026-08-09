@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { CollapsibleTagGroup } from "@/components/collapsible-tag-group";
 
 type TagGroup = { title: string; tags: string[] };
 
@@ -14,10 +15,14 @@ export function SearchFiltersForm({
   selectedPlayers,
   playtimeOptions,
   selectedPlaytimes,
+  formatOptions,
+  selectedFormats,
   priceOptions,
   selectedPrices,
   tagGroups,
   selectedTags,
+  sensitiveOptions,
+  selectedSensitive,
   sort,
 }: {
   q: string;
@@ -29,10 +34,14 @@ export function SearchFiltersForm({
   selectedPlayers: string[];
   playtimeOptions: string[];
   selectedPlaytimes: string[];
+  formatOptions: string[];
+  selectedFormats: string[];
   priceOptions: { key: string; label: string }[];
   selectedPrices: string[];
   tagGroups: TagGroup[];
   selectedTags: string[];
+  sensitiveOptions: string[];
+  selectedSensitive: string[];
   sort: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -51,80 +60,139 @@ export function SearchFiltersForm({
       {q && <input type="hidden" name="q" value={q} />}
       {sort && sort !== "recommend" && <input type="hidden" name="sort" value={sort} />}
 
-      <FilterGroup title="対応版">
-        {systemOptions.map((opt) => (
-          <CheckboxOption
-            key={opt}
-            name="system"
-            value={opt}
-            checked={selectedSystems.includes(opt)}
-            onChange={submit}
-          />
-        ))}
-      </FilterGroup>
+      <div className="space-y-2.5">
+        <CollapsibleTagGroup title="対応版" selectedCount={selectedSystems.length} defaultOpen>
+          <div className="space-y-2">
+            {systemOptions.map((opt) => (
+              <CheckboxOption
+                key={opt}
+                name="system"
+                value={opt}
+                checked={selectedSystems.includes(opt)}
+                onChange={submit}
+              />
+            ))}
+          </div>
+        </CollapsibleTagGroup>
 
-      <FilterGroup title="必要サプリメント">
-        {supplementOptions.map((opt) => (
-          <CheckboxOption
-            key={opt}
-            name="supplement"
-            value={opt}
-            checked={selectedSupplements.includes(opt)}
-            onChange={submit}
-          />
-        ))}
-      </FilterGroup>
+        <CollapsibleTagGroup title="必要サプリメント" selectedCount={selectedSupplements.length}>
+          <div className="space-y-2">
+            {supplementOptions.map((opt) => (
+              <CheckboxOption
+                key={opt}
+                name="supplement"
+                value={opt}
+                checked={selectedSupplements.includes(opt)}
+                onChange={submit}
+              />
+            ))}
+          </div>
+        </CollapsibleTagGroup>
 
-      <FilterGroup title="プレイ人数">
-        {playerOptions.map((opt) => (
-          <CheckboxOption
-            key={opt}
-            name="players"
-            value={opt}
-            checked={selectedPlayers.includes(opt)}
-            onChange={submit}
-          />
-        ))}
-      </FilterGroup>
+        <CollapsibleTagGroup title="プレイ人数" selectedCount={selectedPlayers.length} defaultOpen>
+          <div className="space-y-2">
+            {playerOptions.map((opt) => (
+              <CheckboxOption
+                key={opt}
+                name="players"
+                value={opt}
+                checked={selectedPlayers.includes(opt)}
+                onChange={submit}
+              />
+            ))}
+          </div>
+        </CollapsibleTagGroup>
 
-      <FilterGroup title="プレイ時間">
-        {playtimeOptions.map((opt) => (
-          <CheckboxOption
-            key={opt}
-            name="playtime"
-            value={opt}
-            checked={selectedPlaytimes.includes(opt)}
-            onChange={submit}
-          />
-        ))}
-      </FilterGroup>
+        <CollapsibleTagGroup title="プレイ時間" selectedCount={selectedPlaytimes.length}>
+          <div className="space-y-2">
+            {playtimeOptions.map((opt) => (
+              <CheckboxOption
+                key={opt}
+                name="playtime"
+                value={opt}
+                checked={selectedPlaytimes.includes(opt)}
+                onChange={submit}
+              />
+            ))}
+          </div>
+        </CollapsibleTagGroup>
 
-      <FilterGroup title="価格">
-        {priceOptions.map((opt) => (
-          <CheckboxOption
-            key={opt.key}
-            name="price"
-            value={opt.key}
-            label={opt.label}
-            checked={selectedPrices.includes(opt.key)}
-            onChange={submit}
-          />
-        ))}
-      </FilterGroup>
+        <CollapsibleTagGroup title="対応セッション形式" selectedCount={selectedFormats.length}>
+          <div className="space-y-2">
+            {formatOptions.map((opt) => (
+              <CheckboxOption
+                key={opt}
+                name="format"
+                value={opt}
+                checked={selectedFormats.includes(opt)}
+                onChange={submit}
+              />
+            ))}
+          </div>
+        </CollapsibleTagGroup>
 
-      {tagGroups.map((group) => (
-        <FilterGroup key={group.title} title={group.title}>
-          {group.tags.map((tag) => (
-            <CheckboxOption
-              key={tag}
-              name="tag"
-              value={tag}
-              checked={selectedTags.includes(tag)}
-              onChange={submit}
-            />
-          ))}
-        </FilterGroup>
-      ))}
+        <CollapsibleTagGroup title="価格" selectedCount={selectedPrices.length} defaultOpen>
+          <div className="space-y-2">
+            {priceOptions.map((opt) => (
+              <CheckboxOption
+                key={opt.key}
+                name="price"
+                value={opt.key}
+                label={opt.label}
+                checked={selectedPrices.includes(opt.key)}
+                onChange={submit}
+              />
+            ))}
+          </div>
+        </CollapsibleTagGroup>
+
+        {tagGroups.map((group) => (
+          <CollapsibleTagGroup
+            key={group.title}
+            title={group.title}
+            selectedCount={group.tags.filter((t) => selectedTags.includes(t)).length}
+          >
+            <div className="space-y-2">
+              {group.tags.map((tag) => (
+                <CheckboxOption
+                  key={tag}
+                  name="tag"
+                  value={tag}
+                  checked={selectedTags.includes(tag)}
+                  onChange={submit}
+                />
+              ))}
+            </div>
+          </CollapsibleTagGroup>
+        ))}
+
+        <CollapsibleTagGroup
+          title="センシティブ要素"
+          selectedCount={selectedSensitive.length}
+          tone="sensitive"
+        >
+          <div className="space-y-2">
+            {sensitiveOptions.map((opt) => (
+              <label
+                key={opt}
+                className={`flex cursor-pointer items-center gap-2 text-[12.5px] ${
+                  selectedSensitive.includes(opt) ? "font-medium text-[#8A5A1E]" : "text-[#8A5A1E]/80"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  name="sensitive"
+                  value={opt}
+                  defaultChecked={selectedSensitive.includes(opt)}
+                  onChange={submit}
+                  className="h-3.5 w-3.5 accent-[#8A5A1E]"
+                />
+                {opt}
+              </label>
+            ))}
+          </div>
+        </CollapsibleTagGroup>
+      </div>
 
       <noscript>
         <button
@@ -135,15 +203,6 @@ export function SearchFiltersForm({
         </button>
       </noscript>
     </form>
-  );
-}
-
-function FilterGroup({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-5 last:mb-0">
-      <div className="mb-2.5 text-xs font-bold">{title}</div>
-      <div className="space-y-2">{children}</div>
-    </div>
   );
 }
 

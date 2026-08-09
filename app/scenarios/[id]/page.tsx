@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { FavoriteButton } from "@/components/favorite-button";
 import { createClient } from "@/lib/supabase/server";
-import { ELEMENT_TO_CATEGORY } from "@/lib/content-taxonomy";
+import { ELEMENT_TO_CATEGORY, SENSITIVE_TAGS } from "@/lib/content-taxonomy";
 import { ReviewList } from "./review-list";
 
 type Props = {
@@ -15,6 +16,32 @@ type Props = {
 const DIFFICULTY_LABEL: Record<string, string> = { easy: "優しい", normal: "普通", severe: "シビア" };
 const LOAD_LABEL: Record<string, string> = { light: "軽い", normal: "普通", heavy: "重い" };
 const COMBAT_LABEL: Record<string, string> = { none: "ほぼ無い", light: "軽め", heavy: "激しめ" };
+
+// SNS等でシェアされた際、シナリオ名とシナログのブランド名が両方表示されるようにする
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: scenario } = await supabase
+    .from("scenarios")
+    .select("title, description, author_name, circle_name")
+    .eq("id", id)
+    .eq("is_hidden", false)
+    .maybeSingle();
+
+  if (!scenario) return { title: "シナリオが見つかりません" };
+
+  const author = scenario.circle_name || scenario.author_name;
+  const description =
+    scenario.description?.slice(0, 120) ||
+    `${author ? `${author}の` : ""}クトゥルフ神話TRPGシナリオ「${scenario.title}」のレビューをシナログで見る。`;
+
+  return {
+    title: scenario.title,
+    description,
+    openGraph: { title: scenario.title, description },
+    twitter: { title: scenario.title, description },
+  };
+}
 
 export default async function ScenarioDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
@@ -39,7 +66,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
       supabase
         .from("reviews")
         .select(
-          "id, role, play_format, modification, recommend, good_point, concern_point, spoiler_text, helpful_count, created_at, users(display_name, avatar_icon, avatar_color)"
+          "id, user_id, role, play_format, modification, recommend, good_point, concern_point, spoiler_text, helpful_count, created_at, users(display_name, avatar_icon, avatar_color)"
         )
         .eq("scenario_id", id)
         .eq("is_hidden", false)
@@ -47,6 +74,49 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
     ]);
 
   if (!scenario) notFound();
+
+  const reviewIds = (reviews ?? []).map((r) => r.id);
+
+  // ログイン中のユーザーが「参考になった」「シナリオ以外の要因」を
+  // 既に押しているレビューを取得(ボタンの見た目を正しい状態にするため)
+  let myHelpfulVotes = new Set<string>();
+  let myContextFlags = new Set<string>();
+  if (user && reviewIds.length > 0) {
+    const [{ data: helpfulRows }, { data: flagRows }] = await Promise.all([
+      supabase
+        .from("review_helpful_votes")
+        .select("review_id")
+        .eq("voter_id", user.id)
+        .in("review_id", reviewIds),
+      supabase
+        .from("review_context_flags")
+        .select("review_id")
+        .eq("user_id", user.id)
+        .in("review_id", reviewIds),
+    ]);
+    myHelpfulVotes = new Set((helpfulRows ?? []).map((r) => r.review_id));
+    myContextFlags = new Set((flagRows ?? []).map((r) => r.review_id));
+  }
+
+  // 「シナリオ以外の要因が大きそう」の件数(誰でも見られる集計。通報とは別物)
+  const contextFlagCounts = new Map<string, number>();
+  if (reviewIds.length > 0) {
+    const { data: flagCountRows } = await supabase
+      .from("review_context_flags")
+      .select("review_id")
+      .in("review_id", reviewIds);
+    for (const row of flagCountRows ?? []) {
+      contextFlagCounts.set(row.review_id, (contextFlagCounts.get(row.review_id) ?? 0) + 1);
+    }
+  }
+
+  const enrichedReviews = (reviews ?? []).map((r) => ({
+    ...r,
+    isOwnReview: user?.id === r.user_id,
+    myVote: myHelpfulVotes.has(r.id),
+    myContextFlag: myContextFlags.has(r.id),
+    contextFlagCount: contextFlagCounts.get(r.id) ?? 0,
+  }));
 
   // ログイン中のみ必要な情報(自分のお気に入り状態・自分のレビュー有無・登録者本人か)
   let isFavorited = false;
@@ -81,6 +151,11 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
     if (!groupedElements.has(category)) groupedElements.set(category, []);
     groupedElements.get(category)!.push(row);
   }
+
+  // 登録者が付けたタグを、通常タグとセンシティブ要素に振り分ける
+  const sensitiveSet = new Set(SENSITIVE_TAGS);
+  const normalTags = (scenario.tags ?? []).filter((t: string) => !sensitiveSet.has(t));
+  const sensitiveTags = (scenario.tags ?? []).filter((t: string) => sensitiveSet.has(t));
 
   return (
     <>
@@ -127,6 +202,9 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
               {scenario.play_time && <Pill>プレイ時間 {scenario.play_time}</Pill>}
               <Pill>価格 {scenario.price_text}</Pill>
               {scenario.setting && <Pill>{scenario.setting}</Pill>}
+              {(scenario.session_formats ?? []).map((format: string) => (
+                <Pill key={format}>{format}</Pill>
+              ))}
               {scenario.required_supplements?.length === 0 && <Pill>サプリ不要（ルールブックのみ）</Pill>}
             </div>
 
@@ -134,6 +212,34 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
               <p className="mb-6 whitespace-pre-line border-t border-line pt-5 text-sm leading-relaxed">
                 {scenario.description}
               </p>
+            )}
+
+            {normalTags.length > 0 && (
+              <div className="mb-5 flex flex-wrap gap-1.5">
+                {normalTags.map((tag: string) => (
+                  <span key={tag} className="rounded-full bg-tag-bg px-2.5 py-1 text-[11px] text-tag-ink">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {sensitiveTags.length > 0 && (
+              <div className="mb-5 rounded-lg border border-[#D8B98E] bg-[#FBF3E7] p-4">
+                <div className="mb-2.5 text-xs font-medium text-[#8A5A1E]">
+                  センシティブ要素（プレイ前に知っておきたい方向け）
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {sensitiveTags.map((tag: string) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-[#D8B98E] bg-white px-2.5 py-1 text-[11px] text-[#8A5A1E]"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* おすすめ度サマリー */}
@@ -205,7 +311,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
               </Link>
             </div>
 
-            <ReviewList reviews={normalizeReviews(reviews)} scenarioId={scenario.id} />
+            <ReviewList reviews={normalizeReviews(enrichedReviews)} scenarioId={scenario.id} isLoggedIn={!!user} />
           </div>
         </div>
       </main>

@@ -17,22 +17,49 @@ type ScenarioCardData = {
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const { data: scenarios } = await supabase
-    .from("scenarios")
-    .select(
-      "id, title, description, system_version, recommended_players, play_time, price_text, author_name"
-    )
-    .eq("is_hidden", false)
-    .order("created_at", { ascending: false })
-    .limit(12);
+  const [{ data: scenarios }, { count: scenarioCount }, { count: reviewCount }] = await Promise.all([
+    supabase
+      .from("scenarios")
+      .select(
+        "id, title, description, system_version, recommended_players, play_time, price_text, author_name"
+      )
+      .eq("is_hidden", false)
+      .order("created_at", { ascending: false })
+      .limit(12),
+    supabase.from("scenarios").select("id", { count: "exact", head: true }).eq("is_hidden", false),
+    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("is_hidden", false),
+  ]);
 
   return (
     <>
       <Header />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+        {/* ブランディング・用途説明。SNSでの引用やスクリーンショットにもここが写る想定。 */}
+        <section className="mb-10 rounded-xl border border-line bg-panel px-7 py-9 text-center">
+          <p className="mb-2 text-[11.5px] font-medium tracking-wide text-ink-faint">
+            クトゥルフ神話TRPGシナリオ専門のレビューサイト
+          </p>
+          <h1 className="mb-3 text-2xl font-bold">
+            Sina<span className="text-accent">log</span>
+          </h1>
+          <p className="mx-auto mb-6 max-w-xl text-pretty text-[13px] leading-relaxed text-ink-sub">
+            実際に遊んだ探索者たちの声で、次に遊ぶ一本を選べる場所。
+            <br />
+            シナリオへの評価だけでなく、良いレビューを書いてくれた人にもきちんと光が当たる場所を目指しています。
+          </p>
+          <div className="flex justify-center gap-6 text-[12px] text-ink-faint">
+            <span>
+              登録シナリオ <strong className="text-ink">{scenarioCount ?? 0}</strong>本
+            </span>
+            <span>
+              投稿レビュー <strong className="text-ink">{reviewCount ?? 0}</strong>件
+            </span>
+          </div>
+        </section>
+
         <div className="mb-10 flex items-center justify-between">
-          <h1 className="text-base font-bold">新着シナリオ</h1>
+          <h2 className="text-base font-bold">新着シナリオ</h2>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

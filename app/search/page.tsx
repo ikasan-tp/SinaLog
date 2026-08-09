@@ -2,14 +2,13 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
-import { TAG_GROUPS, SUPPLEMENTS } from "@/lib/content-taxonomy";
+import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS, SESSION_FORMAT_OPTIONS } from "@/lib/content-taxonomy";
 import { SearchFiltersForm } from "./search-filters-form";
 import { SortSelect as SortSelectClient, SORT_OPTIONS } from "./sort-select";
 
 const PAGE_SIZE = 20;
 
 const SYSTEM_OPTIONS = ["クトゥルフ神話TRPG", "新クトゥルフ神話TRPG"];
-const PLAYER_OPTIONS = ["1人", "1〜3人", "2〜3人", "4〜5人", "6人以上"];
 const PLAYTIME_OPTIONS = ["〜2時間", "2〜3時間", "4〜6時間", "8時間以上"];
 const PRICE_OPTIONS = [
   { key: "free", label: "無料" },
@@ -23,8 +22,10 @@ type SearchParams = {
   supplement?: string | string[];
   players?: string | string[];
   playtime?: string | string[];
+  format?: string | string[];
   price?: string | string[];
   tag?: string | string[];
+  sensitive?: string | string[];
   sort?: string;
   page?: string;
 };
@@ -45,8 +46,10 @@ export default async function SearchPage({
   const supplements = toArray(sp.supplement);
   const players = toArray(sp.players);
   const playtimes = toArray(sp.playtime);
+  const formats = toArray(sp.format);
   const prices = toArray(sp.price);
   const tags = toArray(sp.tag);
+  const sensitive = toArray(sp.sensitive);
   const sort = sp.sort && SORT_OPTIONS.some((o) => o.key === sp.sort) ? sp.sort : "recommend";
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
 
@@ -55,7 +58,7 @@ export default async function SearchPage({
   let query = supabase
     .from("scenarios")
     .select(
-      "id, title, author_name, circle_name, system_version, recommended_players, play_time, price_text, description, required_supplements, tags, created_at"
+      "id, title, author_name, circle_name, system_version, recommended_players, play_time, session_formats, price_text, description, required_supplements, tags, created_at"
     )
     .eq("is_hidden", false);
 
@@ -68,8 +71,10 @@ export default async function SearchPage({
   if (systems.length > 0) query = query.in("system_version", systems);
   if (players.length > 0) query = query.in("recommended_players", players);
   if (playtimes.length > 0) query = query.in("play_time", playtimes);
+  if (formats.length > 0) query = query.overlaps("session_formats", formats);
   if (supplements.length > 0) query = query.overlaps("required_supplements", supplements);
   if (tags.length > 0) query = query.overlaps("tags", tags);
+  if (sensitive.length > 0) query = query.overlaps("tags", sensitive);
   if (prices.includes("free") && !prices.includes("paid")) {
     query = query.eq("price_text", "無料");
   } else if (prices.includes("paid") && !prices.includes("free")) {
@@ -115,7 +120,17 @@ export default async function SearchPage({
   const currentPage = Math.min(page, totalPages);
   const pageItems = merged.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const activeFilterChips = buildActiveFilterChips({ q, systems, supplements, players, playtimes, prices, tags });
+  const activeFilterChips = buildActiveFilterChips({
+    q,
+    systems,
+    supplements,
+    players,
+    playtimes,
+    formats,
+    prices,
+    tags,
+    sensitive,
+  });
 
   return (
     <>
@@ -159,10 +174,14 @@ export default async function SearchPage({
             selectedPlayers={players}
             playtimeOptions={PLAYTIME_OPTIONS}
             selectedPlaytimes={playtimes}
+            formatOptions={SESSION_FORMAT_OPTIONS}
+            selectedFormats={formats}
             priceOptions={PRICE_OPTIONS}
             selectedPrices={prices}
             tagGroups={TAG_GROUPS}
             selectedTags={tags}
+            sensitiveOptions={SENSITIVE_TAGS}
+            selectedSensitive={sensitive}
             sort={sort}
           />
 
@@ -327,20 +346,34 @@ function buildActiveFilterChips({
   supplements,
   players,
   playtimes,
+  formats,
   prices,
   tags,
+  sensitive,
 }: {
   q: string;
   systems: string[];
   supplements: string[];
   players: string[];
   playtimes: string[];
+  formats: string[];
   prices: string[];
   tags: string[];
+  sensitive: string[];
 }) {
   const chips: { label: string; href: string; group: keyof SearchParams; value: string }[] = [];
 
-  const base: SearchParams = { q: q || undefined, system: systems, supplement: supplements, players, playtime: playtimes, price: prices, tag: tags };
+  const base: SearchParams = {
+    q: q || undefined,
+    system: systems,
+    supplement: supplements,
+    players,
+    playtime: playtimes,
+    format: formats,
+    price: prices,
+    tag: tags,
+    sensitive,
+  };
 
   const pushChips = (group: keyof SearchParams, values: string[], labelOf: (v: string) => string) => {
     for (const v of values) {
@@ -350,10 +383,12 @@ function buildActiveFilterChips({
 
   pushChips("system", systems, (v) => v);
   pushChips("supplement", supplements, (v) => v);
-  pushChips("players", players, (v) => `PL ${v}`);
+  pushChips("players", players, (v) => v);
   pushChips("playtime", playtimes, (v) => v);
+  pushChips("format", formats, (v) => v);
   pushChips("price", prices, (v) => (v === "free" ? "無料" : "有料"));
   pushChips("tag", tags, (v) => v);
+  pushChips("sensitive", sensitive, (v) => v);
 
   return chips;
 }

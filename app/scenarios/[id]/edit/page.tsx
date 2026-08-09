@@ -23,7 +23,7 @@ export default async function EditScenarioPage({
   const { data: scenario } = await supabase
     .from("scenarios")
     .select(
-      "id, title, author_name, circle_name, distribution_url, price_text, system_version, setting, recommended_players, play_time, has_combat, word_count, description, thumbnail_url, tags, required_supplements, registered_by"
+      "id, title, author_name, circle_name, distribution_url, price_text, system_version, setting, recommended_players, play_time, session_formats, has_combat, word_count, description, thumbnail_url, tags, required_supplements, registered_by"
     )
     .eq("id", id)
     .single();
@@ -53,6 +53,7 @@ export default async function EditScenarioPage({
             setting: scenario.setting ?? "",
             recommendedPlayers: scenario.recommended_players ?? "",
             playTime: scenario.play_time ?? "",
+            sessionFormats: scenario.session_formats ?? [],
             hasCombat: scenario.has_combat ?? false,
             wordCount: scenario.word_count ?? null,
             description: scenario.description ?? "",
