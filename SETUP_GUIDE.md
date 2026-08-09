@@ -33,6 +33,11 @@
    0009_scenario_delete_policy.sql
    0010_own_hidden_review_visibility.sql
    0011_admin_table.sql
+   0012_session_formats.sql
+   0013_review_helpful_votes.sql
+   0014_review_context_flags.sql
+   0015_public_profile.sql
+   0016_protect_reviewed_scenarios.sql
    ```
    1ファイルずつ中身をコピーしてSQL Editorに貼り付け、実行（Run）すればよい。
 3. 左メニュー「Table Editor」で `users` `scenarios` `reviews` `reports` の4テーブルが作成されていれば成功
@@ -68,6 +73,38 @@ Authentication → URL Configuration → **Redirect URLs** に以下を追加す
 
 - 開発時: `http://localhost:3000/auth/callback`
 - 本番: `https://<実際の公開ドメイン>/auth/callback`
+
+### 2-5. Google認証画面に「Supabaseのプロジェクトの英数字URL」ではなく「シナログ」と表示させる
+
+デフォルトのままだと、Googleログインを押したときの同意画面が
+`◯◯◯◯.supabase.co に進む` のような、意味の分からないURLで表示されてしまう。
+これはブランディング上好ましくないので、次の設定で解消する。
+
+**無料でできる範囲（ここだけで、ほぼ解決する）**
+
+1. [Google Cloud Console](https://console.cloud.google.com) → 対象プロジェクト → 「APIとサービス」→「OAuth同意画面」を開く
+2. アプリ名を **「シナログ」**（または `Sinalog`）に設定する。ここが同意画面の一番大きな文字として表示される
+3. ロゴ画像（正方形・120×120px以上）をアップロードする
+4. 「アプリのドメイン」に、本番公開ドメインの以下3つを設定する
+   - アプリケーションのホームページ: `https://<公開ドメイン>`
+   - プライバシーポリシーへのリンク: `https://<公開ドメイン>/terms`（このアプリの利用規約ページを流用してよい）
+   - 利用規約へのリンク: `https://<公開ドメイン>/terms`
+5. 「承認済みドメイン」に公開ドメイン（`https://`無し、例: `sinalog.example`）を追加する
+   - 事前に [Google Search Console](https://search.google.com/search-console) でそのドメインの所有権を確認しておく必要がある
+6. スコープは `userinfo.email` `userinfo.profile` `openid` の非機微スコープのみにしておく（追加の審査が不要で、公開までが早い）
+7. 「公開ステータス」を **本番公開（Publish）** にする（テストモードのままだとテストユーザー以外はブランディングも正しく表示されない）
+
+ここまで設定すると、同意画面の見出しは `シナログ に進む` のように表示されるようになる（反映まで最大24時間ほどかかることがある）。
+
+**それでも一部にSupabaseのプロジェクトURLが表示される場合**
+
+Google側の同意画面は、仕様上「コールバック先のドメイン」も参照する作りになっており、
+Supabase Authをそのまま使う限りコールバック先は `https://<プロジェクトref>.supabase.co/auth/v1/callback` になる。
+上記の設定でアプリ名・ロゴ・ドメインは正しく表示されるようになるが、
+細部の表示までSupabaseのURLを完全に消したい場合は、Supabaseの
+[Custom Domains](https://supabase.com/docs/guides/platform/custom-domains)（有料アドオン、Proプラン以上が前提）を使い、
+`auth.<公開ドメイン>` のような独自ドメインをSupabase Authに割り当てる方法がある。
+費用をかけたくない場合は、上記の無料設定だけでも実用上は十分にブランディングされた見た目になる。
 
 ---
 
