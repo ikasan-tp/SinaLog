@@ -14,7 +14,7 @@ export async function Header() {
     <header className="sticky top-0 z-50 border-b border-line bg-panel">
       <div className="relative mx-auto flex h-16 max-w-6xl items-center gap-7 px-6">
         <Link href="/" className="text-[17px] font-bold text-ink">
-          Sina<span className="text-accent">log</span>
+          Sina<span className="text-accent">Log</span>
         </Link>
 
         {/* デスクトップ幅ではヘッダー内に検索欄を表示する */}

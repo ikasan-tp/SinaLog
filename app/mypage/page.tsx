@@ -68,7 +68,7 @@ export default async function MypagePage() {
 
   const reviewCount = reviews?.length ?? 0;
   const favoriteCount = favorites?.length ?? 0;
-  // 非公開(通報等でis_hidden=trueになった)レビューの分は貢献度に含めない集計ビューを使う
+  // 非公開(通報等でis_hidden=trueになった)レビューの分は集計に含めない集計ビューを使う
   const helpfulReceived = reputation?.helpful_total ?? 0;
   const joinedYear = new Date(profile.created_at).getFullYear();
   const joinedMonth = new Date(profile.created_at).getMonth() + 1;

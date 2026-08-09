@@ -37,7 +37,7 @@ export default function TermsPage() {
 
           <Section id="terms" title="1. 利用規約について" first>
             <p>
-              この利用規約（以下「本規約」）は、シナログ（Sinalog、以下「当サイト」）の利用条件を定めるものです。登録・閲覧・投稿を行った時点で、本規約に同意したものとみなします。
+              この利用規約（以下「本規約」）は、SinaLog（以下「当サイト」）の利用条件を定めるものです。登録・閲覧・投稿を行った時点で、本規約に同意したものとみなします。
             </p>
             <p>
               当サイトは個人が運営するファンプロジェクトであり、クトゥルフ神話TRPGの権利元・各シナリオの作者・頒布プラットフォームとは関係ありません。
@@ -94,6 +94,19 @@ export default function TermsPage() {
             <p>
               シナリオのサムネイル画像は、頒布ページ（BOOTH等）の画像を直接参照する形で表示しており、当サイトのサーバーに複製・保存はしていません。
             </p>
+            <div className="mt-3.5 rounded-lg border border-line-strong bg-panel p-4 text-[12.5px] leading-relaxed text-ink-sub">
+              <p>
+                本サイトは、「株式会社アークライト」及び「株式会社KADOKAWA」が権利を有する『クトゥルフ神話TRPG』シリーズの二次創作物です。
+              </p>
+              <p className="mt-2">
+                Call of Cthulhu is copyright ©1981, 2015, 2019 by Chaosium Inc.; all rights reserved. Arranged by
+                Arclight Inc.
+                <br />
+                Call of Cthulhu is a registered trademark of Chaosium Inc.
+                <br />
+                PUBLISHED BY KADOKAWA CORPORATION　「クトゥルフ神話TRPG」「新クトゥルフ神話TRPG」
+              </p>
+            </div>
           </Section>
 
           <Section id="disclaimer" title="6. 免責事項">
@@ -127,7 +140,7 @@ export default function TermsPage() {
             </ul>
             <p>通報の対応結果やお知らせは、個別のメール送信ではなくサイト内の表示でお伝えします。</p>
             <p>
-              表示名・アイコン・自己紹介・好きな傾向タグ・お気に入りに登録したシナリオ・レビュー貢献度（累計の参考になった数）は、公開プロフィールページとして誰でも閲覧できます。メールアドレスなど、これら以外の登録情報を公開することはありません。
+              表示名・アイコン・自己紹介・好きな傾向タグ・お気に入りに登録したシナリオ・累計の参考になった数は、公開プロフィールページとして誰でも閲覧できます。メールアドレスなど、これら以外の登録情報を公開することはありません。
             </p>
             <p>取得した個人情報を、本人の同意なく第三者に提供することはありません。法令にもとづく開示請求があった場合を除きます。</p>
             <p>アカウントの削除をご希望の場合、マイページの設定、またはお問い合わせよりご連絡ください。</p>

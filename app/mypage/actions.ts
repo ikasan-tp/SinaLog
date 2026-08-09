@@ -88,7 +88,6 @@ export async function deleteMyReview(reviewId: string) {
   await supabase.from("reviews").delete().eq("id", reviewId).eq("user_id", user.id);
   revalidatePath("/mypage");
   revalidatePath(`/u/${user.id}`);
-  revalidatePath(`/u/${user.id}/reviews`);
 }
 
 /** 自分が登録したシナリオを削除 */

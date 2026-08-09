@@ -79,7 +79,7 @@ function LoginForm() {
       <header className="border-b border-line bg-panel">
         <div className="mx-auto flex h-16 max-w-6xl items-center px-6">
           <Link href="/" className="text-[17px] font-bold text-ink">
-            Sina<span className="text-accent">log</span>
+            Sina<span className="text-accent">Log</span>
           </Link>
         </div>
       </header>
@@ -95,7 +95,7 @@ function LoginForm() {
                 </svg>
               </div>
               <h1 className="mb-1.5 text-center text-[19px] font-bold">
-                シナログへようこそ
+                SinaLogへようこそ
               </h1>
               <p className="mb-6 text-center text-[12.5px] leading-relaxed text-ink-sub">
                 ログインすると、レビューの投稿や閲覧履歴の確認ができます。初めての方も同じ方法で登録されます。
@@ -178,7 +178,7 @@ function LoginForm() {
       </main>
 
       <footer className="border-t border-line px-6 py-6 text-center text-[11px] text-ink-faint">
-        シナログ（Sinalog）── クトゥルフ神話TRPGシナリオレビューサイト
+        SinaLog── クトゥルフ神話TRPGシナリオレビューサイト
       </footer>
     </div>
   );

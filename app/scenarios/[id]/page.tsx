@@ -17,7 +17,7 @@ const DIFFICULTY_LABEL: Record<string, string> = { easy: "優しい", normal: "�
 const LOAD_LABEL: Record<string, string> = { light: "軽い", normal: "普通", heavy: "重い" };
 const COMBAT_LABEL: Record<string, string> = { none: "ほぼ無い", light: "軽め", heavy: "激しめ" };
 
-// SNS等でシェアされた際、シナリオ名とシナログのブランド名が両方表示されるようにする
+// SNS等でシェアされた際、シナリオ名とSinaLogのブランド名が両方表示されるようにする
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const author = scenario.circle_name || scenario.author_name;
   const description =
     scenario.description?.slice(0, 120) ||
-    `${author ? `${author}の` : ""}クトゥルフ神話TRPGシナリオ「${scenario.title}」のレビューをシナログで見る。`;
+    `${author ? `${author}の` : ""}クトゥルフ神話TRPGシナリオ「${scenario.title}」のレビューをSinaLogで見る。`;
 
   return {
     title: scenario.title,

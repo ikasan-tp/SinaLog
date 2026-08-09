@@ -41,7 +41,7 @@ export default async function HomePage() {
             クトゥルフ神話TRPGシナリオ専門のレビューサイト
           </p>
           <h1 className="mb-3 text-2xl font-bold">
-            Sina<span className="text-accent">log</span>
+            Sina<span className="text-accent">Log</span>
           </h1>
           <p className="mx-auto mb-6 max-w-xl text-pretty text-[13px] leading-relaxed text-ink-sub">
             実際に遊んだ探索者たちの声で、次に遊ぶ一本を選べる場所。

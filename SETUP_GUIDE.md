@@ -1,4 +1,4 @@
-# シナログ セットアップ・使用ガイド
+# SinaLog セットアップ・使用ガイド
 
 ゼロから本番公開までの手順と、各機能の使い方をまとめたもの。
 技術的な設計の詳細は `implementation_spec.md`、コードの実装状況は `README.md` を参照。
@@ -74,7 +74,7 @@ Authentication → URL Configuration → **Redirect URLs** に以下を追加す
 - 開発時: `http://localhost:3000/auth/callback`
 - 本番: `https://<実際の公開ドメイン>/auth/callback`
 
-### 2-5. Google認証画面に「Supabaseのプロジェクトの英数字URL」ではなく「シナログ」と表示させる
+### 2-5. Google認証画面に「Supabaseのプロジェクトの英数字URL」ではなく「SinaLog」と表示させる
 
 デフォルトのままだと、Googleログインを押したときの同意画面が
 `◯◯◯◯.supabase.co に進む` のような、意味の分からないURLで表示されてしまう。
@@ -83,7 +83,7 @@ Authentication → URL Configuration → **Redirect URLs** に以下を追加す
 **無料でできる範囲（ここだけで、ほぼ解決する）**
 
 1. [Google Cloud Console](https://console.cloud.google.com) → 対象プロジェクト → 「APIとサービス」→「OAuth同意画面」を開く
-2. アプリ名を **「シナログ」**（または `Sinalog`）に設定する。ここが同意画面の一番大きな文字として表示される
+2. アプリ名を **「SinaLog」**（または `SinaLog`）に設定する。ここが同意画面の一番大きな文字として表示される
 3. ロゴ画像（正方形・120×120px以上）をアップロードする
 4. 「アプリのドメイン」に、本番公開ドメインの以下3つを設定する
    - アプリケーションのホームページ: `https://<公開ドメイン>`
@@ -94,7 +94,7 @@ Authentication → URL Configuration → **Redirect URLs** に以下を追加す
 6. スコープは `userinfo.email` `userinfo.profile` `openid` の非機微スコープのみにしておく（追加の審査が不要で、公開までが早い）
 7. 「公開ステータス」を **本番公開（Publish）** にする（テストモードのままだとテストユーザー以外はブランディングも正しく表示されない）
 
-ここまで設定すると、同意画面の見出しは `シナログ に進む` のように表示されるようになる（反映まで最大24時間ほどかかることがある）。
+ここまで設定すると、同意画面の見出しは `SinaLog に進む` のように表示されるようになる（反映まで最大24時間ほどかかることがある）。
 
 **それでも一部にSupabaseのプロジェクトURLが表示される場合**
 
