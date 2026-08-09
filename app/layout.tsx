@@ -30,6 +30,13 @@ export const metadata: Metadata = {
     title: "SinaLog┃TRPGシナリオレビュー",
     description: "クトゥルフ神話TRPGシナリオのレビューサイト。実際に遊んだ人の声で、次に遊ぶ一本を選べます。",
   },
+  // Google Search Consoleでのサイト所有権確認用(HTMLタグ方式)。
+  // Search Consoleで発行される「content="..."」の値を.env.localの
+  // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION に設定すると<meta>タグとして出力される。
+  // 未設定でも他の機能には影響しない。
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 // ページ描画前にlocalStorageのテーマを読み、<html>に反映する。
