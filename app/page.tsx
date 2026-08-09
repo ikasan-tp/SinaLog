@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { ScenarioThumbnail } from "@/components/scenario-thumbnail";
 import { createClient } from "@/lib/supabase/server";
 
 type ScenarioCardData = {
@@ -12,6 +13,7 @@ type ScenarioCardData = {
   play_time: string | null;
   price_text: string;
   author_name: string | null;
+  thumbnail_url: string | null;
 };
 
 export default async function HomePage() {
@@ -21,7 +23,7 @@ export default async function HomePage() {
     supabase
       .from("scenarios")
       .select(
-        "id, title, description, system_version, recommended_players, play_time, price_text, author_name"
+        "id, title, description, system_version, recommended_players, play_time, price_text, author_name, thumbnail_url"
       )
       .eq("is_hidden", false)
       .order("created_at", { ascending: false })
@@ -94,13 +96,13 @@ function ScenarioCard({ scenario }: { scenario: ScenarioCardData }) {
       href={`/scenarios/${scenario.id}`}
       className="rounded-xl border border-line bg-panel transition-shadow hover:shadow-md"
     >
-      <div className="relative h-[120px] rounded-t-xl bg-gradient-to-br from-[#3A2E33] to-[#241C22]">
+      <ScenarioThumbnail src={scenario.thumbnail_url} className="relative h-[120px] rounded-t-xl">
         {scenario.system_version && (
           <span className="absolute left-2.5 top-2.5 rounded bg-white/90 px-2 py-0.5 text-[10px] text-tag-ink">
             {scenario.system_version}
           </span>
         )}
-      </div>
+      </ScenarioThumbnail>
       <div className="p-3.5">
         <div className="mb-1.5 text-sm font-bold">{scenario.title}</div>
         {scenario.description && (

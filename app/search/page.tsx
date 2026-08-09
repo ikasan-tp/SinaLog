@@ -3,6 +3,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS, SESSION_FORMAT_OPTIONS } from "@/lib/content-taxonomy";
+import { ScenarioThumbnail } from "@/components/scenario-thumbnail";
 import { SearchFiltersForm } from "./search-filters-form";
 import { SortSelect as SortSelectClient, SORT_OPTIONS } from "./sort-select";
 
@@ -58,7 +59,7 @@ export default async function SearchPage({
   let query = supabase
     .from("scenarios")
     .select(
-      "id, title, author_name, circle_name, system_version, recommended_players, play_time, session_formats, price_text, description, required_supplements, tags, created_at"
+      "id, title, author_name, circle_name, system_version, recommended_players, play_time, session_formats, price_text, description, thumbnail_url, required_supplements, tags, created_at"
     )
     .eq("is_hidden", false);
 
@@ -235,6 +236,7 @@ type ResultScenario = {
   play_time: string | null;
   price_text: string;
   description: string | null;
+  thumbnail_url: string | null;
   reviewCount: number;
   recommendPct: number | null;
 };
@@ -245,7 +247,7 @@ function ResultCard({ scenario }: { scenario: ResultScenario }) {
       href={`/scenarios/${scenario.id}`}
       className="flex gap-4 rounded-xl border border-line bg-panel p-4 transition-colors hover:border-line-strong"
     >
-      <div className="h-24 w-24 flex-shrink-0 rounded-lg bg-gradient-to-br from-[#3A2E33] to-[#241C22]" />
+      <ScenarioThumbnail src={scenario.thumbnail_url} className="h-24 w-24 flex-shrink-0 rounded-lg" />
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-start justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">

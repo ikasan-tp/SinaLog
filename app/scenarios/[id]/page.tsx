@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { FavoriteButton } from "@/components/favorite-button";
+import { ScenarioThumbnail } from "@/components/scenario-thumbnail";
 import { createClient } from "@/lib/supabase/server";
 import { ELEMENT_TO_CATEGORY, SENSITIVE_TAGS } from "@/lib/content-taxonomy";
 import { ReviewList } from "./review-list";
@@ -166,13 +167,13 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
         {updated && <Banner>更新しました</Banner>}
 
         <div className="overflow-hidden rounded-xl border border-line bg-panel">
-          <div className="relative h-[180px] bg-gradient-to-br from-[#3A2E33] to-[#241C22]">
+          <ScenarioThumbnail src={scenario.thumbnail_url} className="h-[180px]">
             {scenario.system_version && (
               <span className="absolute left-5 top-5 rounded bg-white/90 px-2.5 py-1 text-[11px] text-tag-ink">
                 {scenario.system_version}
               </span>
             )}
-          </div>
+          </ScenarioThumbnail>
 
           <div className="p-8">
             <div className="mb-1.5 flex flex-wrap items-start justify-between gap-3">
