@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { SearchForm } from "./search-form";
 
 /**
@@ -25,7 +26,14 @@ export function MobileSearchToggle() {
 
       {open && (
         <div className="absolute inset-x-0 top-16 z-40 border-b border-line bg-panel px-6 py-4 shadow-md md:hidden">
-          <SearchForm className="flex" autoFocus />
+          <SearchForm className="mb-3 flex" autoFocus />
+          <Link
+            href="/scenarios/new"
+            onClick={() => setOpen(false)}
+            className="block text-[13px] text-ink-sub hover:text-accent"
+          >
+            シナリオを登録する
+          </Link>
         </div>
       )}
     </>

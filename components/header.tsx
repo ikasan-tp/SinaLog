@@ -20,6 +20,13 @@ export async function Header() {
         {/* デスクトップ幅ではヘッダー内に検索欄を表示する */}
         <SearchForm className="hidden max-w-[420px] flex-1 md:flex" />
 
+        <Link
+          href="/scenarios/new"
+          className="hidden flex-shrink-0 text-[13px] text-ink-sub hover:text-accent md:inline"
+        >
+          シナリオを登録
+        </Link>
+
         <div className="ml-auto flex items-center gap-4">
           {user ? (
             <>

@@ -18,10 +18,6 @@ export async function createReview(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect(`/login?next=/scenarios/${scenarioId}/review/new`);
-  }
-
   const goodPoint = (formData.get("goodPoint") as string)?.trim();
   const role = formData.get("role") as string;
   const playFormat = formData.get("playFormat") as string;
@@ -39,7 +35,7 @@ export async function createReview(
   const { error } = await supabase.from("reviews").upsert(
     {
       scenario_id: scenarioId,
-      user_id: user.id,
+      user_id: user?.id ?? null,
       role,
       play_format: playFormat,
       recommend: recommend === "yes",

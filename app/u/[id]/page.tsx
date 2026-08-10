@@ -66,27 +66,30 @@ export default async function PublicProfilePage({ params }: Props) {
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
         {/* プロフィールヘッダー */}
         <div className="mb-6 rounded-xl border border-line bg-panel p-7">
-          <div className="flex items-center gap-4">
-            <AvatarIcon
-              icon={profile.avatar_icon}
-              color={profile.avatar_color}
-              displayName={profile.display_name}
-              size={64}
-            />
-            <div>
-              <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <AvatarIcon
+                icon={profile.avatar_icon}
+                color={profile.avatar_color}
+                displayName={profile.display_name}
+                size={64}
+              />
+              <div>
                 <span className="text-lg font-bold">{profile.display_name}</span>
-                <span
-                  title="レビューが参考になったと押された回数の合計"
-                  className="flex items-center gap-0.5 text-[11px] text-ink-faint"
-                >
-                  <HelpfulIcon />
-                  参考になった{helpfulTotal}件
-                </span>
+                <div className="text-xs text-ink-faint">
+                  {joinedYear}年{joinedMonth}月から利用
+                </div>
               </div>
-              <div className="text-xs text-ink-faint">
-                {joinedYear}年{joinedMonth}月から利用
-              </div>
+            </div>
+            <div
+              title="レビューが参考になったと押された回数の合計"
+              className="flex flex-shrink-0 flex-col items-center rounded-lg bg-accent-bg px-4 py-2 text-center"
+            >
+              <span className="flex items-center gap-1 text-xl font-bold text-accent">
+                <HelpfulIcon />
+                {helpfulTotal}
+              </span>
+              <span className="text-[10.5px] text-accent">参考になった</span>
             </div>
           </div>
 
@@ -142,7 +145,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
 function HelpfulIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <path d="M7 10v11" />
       <path d="M2 10h4v11H2V10Z" />
       <path d="M7 10l3-8a2 2 0 0 1 2 2v5h6.3a2 2 0 0 1 2 2.4l-1.5 7A2 2 0 0 1 17 21H7" />

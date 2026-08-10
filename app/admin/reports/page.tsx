@@ -81,7 +81,7 @@ export default async function AdminReportsPage() {
 
                   <div className="mb-3 rounded-md bg-bg p-3.5">
                     <div className="mb-1 text-[10px] text-ink-faint">
-                      対象レビュー（{reviewer?.display_name ?? "不明なユーザー"} / {scenario?.title ?? "不明なシナリオ"}）
+                      対象レビュー（{reviewer?.display_name ?? "匿名さん"} / {scenario?.title ?? "不明なシナリオ"}）
                     </div>
                     <div className="text-[13px]">{review?.good_point}</div>
                   </div>

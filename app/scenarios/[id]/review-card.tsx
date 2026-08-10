@@ -13,7 +13,7 @@ const FORMAT_LABEL: Record<string, string> = { text: "テキセ", voice: "ボイ
 
 type ReviewRow = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   role: string;
   play_format: string;
   modification: string;
@@ -102,23 +102,32 @@ export function ReviewCard({
   }
 
   const date = new Date(review.created_at).toLocaleDateString("ja-JP");
+  const displayName = review.user_id ? review.users?.display_name ?? "名無しの探索者" : "匿名さん";
+  const avatarColor = review.user_id ? review.users?.avatar_color ?? "#7A2430" : "#6B675E";
+
+  const authorInfo = (
+    <>
+      <div
+        className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold"
+        style={{ backgroundColor: `${avatarColor}1A`, color: avatarColor }}
+      >
+        {displayName.slice(0, 1)}
+      </div>
+      <span className="text-[13px] font-medium">{displayName}</span>
+      <span className="text-[11px] text-ink-faint">{date}</span>
+    </>
+  );
 
   return (
     <div className="border-b border-line py-4.5 py-[18px] last:border-0">
       <div className="mb-2 flex items-center justify-between">
-        <Link href={`/u/${review.user_id}`} className="flex items-center gap-2 hover:opacity-80">
-          <div
-            className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold"
-            style={{
-              backgroundColor: `${review.users?.avatar_color ?? "#7A2430"}1A`,
-              color: review.users?.avatar_color ?? "#7A2430",
-            }}
-          >
-            {review.users?.display_name?.slice(0, 1) ?? "?"}
-          </div>
-          <span className="text-[13px] font-medium">{review.users?.display_name ?? "名無しの探索者"}</span>
-          <span className="text-[11px] text-ink-faint">{date}</span>
-        </Link>
+        {review.user_id ? (
+          <Link href={`/u/${review.user_id}`} className="flex items-center gap-2 hover:opacity-80">
+            {authorInfo}
+          </Link>
+        ) : (
+          <div className="flex items-center gap-2">{authorInfo}</div>
+        )}
         <span
           className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
             review.recommend ? "bg-ok-bg text-ok" : "bg-accent-bg text-accent"

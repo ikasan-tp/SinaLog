@@ -93,7 +93,7 @@ export default async function MypagePage() {
                 size={64}
               />
               <div>
-                <div className="text-lg font-bold">{profile.display_name}</div>
+                <DisplayNameEditor initialName={profile.display_name} variant="compact" />
                 <div className="text-xs text-ink-faint">
                   {joinedYear}年{joinedMonth}月から利用
                 </div>
@@ -137,16 +137,12 @@ export default async function MypagePage() {
           settingsContent={
             <div className="space-y-5">
               <div className="rounded-xl border border-line bg-panel p-6">
-                <DisplayNameEditor initialName={profile.display_name} />
-
-                <div className="mt-5 border-t border-line pt-5">
-                  <div className="mb-1 text-xs font-bold text-ink-sub">ログイン方法</div>
-                  <p className="text-[13px] text-ink-sub">
-                    {provider}
-                    {email && <span className="text-ink-faint">（{email}）</span>}
-                    でログイン中
-                  </p>
-                </div>
+                <div className="mb-1 text-xs font-bold text-ink-sub">ログイン方法</div>
+                <p className="text-[13px] text-ink-sub">
+                  {provider}
+                  {email && <span className="text-ink-faint">（{email}）</span>}
+                  でログイン中
+                </p>
               </div>
 
               <div>

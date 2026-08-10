@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import { updateDisplayName } from "./actions";
 
-export function DisplayNameEditor({ initialName }: { initialName: string }) {
+export function DisplayNameEditor({
+  initialName,
+  variant = "full",
+}: {
+  initialName: string;
+  variant?: "full" | "compact";
+}) {
   const [committedName, setCommittedName] = useState(initialName);
   const [draftName, setDraftName] = useState(initialName);
   const [editing, setEditing] = useState(false);
@@ -24,6 +30,25 @@ export function DisplayNameEditor({ initialName }: { initialName: string }) {
   }
 
   if (!editing) {
+    if (variant === "compact") {
+      // マイページ最上部、アイコン横に置く用。名前のすぐ右に「変更する」を出し、迷わないようにする。
+      return (
+        <span className="flex items-center gap-2">
+          <span className="text-lg font-bold">{committedName}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setDraftName(committedName);
+              setError("");
+              setEditing(true);
+            }}
+            className="text-[11px] text-link underline hover:text-accent"
+          >
+            変更する
+          </button>
+        </span>
+      );
+    }
     return (
       <div className="flex items-center justify-between">
         <div>
@@ -47,14 +72,15 @@ export function DisplayNameEditor({ initialName }: { initialName: string }) {
 
   return (
     <form action={handleSubmit}>
-      <div className="mb-0.5 text-xs font-bold text-ink-sub">表示名</div>
+      {variant === "full" && <div className="mb-0.5 text-xs font-bold text-ink-sub">表示名</div>}
       <div className="flex gap-2">
         <input
           name="displayName"
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
           maxLength={30}
-          className="flex-1 rounded-md border border-line-strong px-3 py-2 text-[13px] outline-none focus:border-accent"
+          autoFocus
+          className="min-w-0 flex-1 rounded-md border border-line-strong px-3 py-2 text-[13px] outline-none focus:border-accent"
         />
         <button
           type="submit"
