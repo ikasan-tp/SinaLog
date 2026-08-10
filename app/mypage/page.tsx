@@ -77,7 +77,6 @@ export default async function MypagePage() {
   const provider = user.app_metadata?.provider === "google" ? "Googleアカウント" : "メールアドレス";
   const email = user.email ?? "";
 
-  const tasteTagOptions = TAG_GROUPS.flatMap((g) => g.tags);
 
   return (
     <>
@@ -127,7 +126,7 @@ export default async function MypagePage() {
           </div>
 
           <div className="mt-6 border-t border-line pt-5">
-            <TasteTagsEditor initialTags={profile.taste_tags ?? []} options={tasteTagOptions} />
+            <TasteTagsEditor initialTags={profile.taste_tags ?? []} tagGroups={TAG_GROUPS} />
           </div>
         </div>
 

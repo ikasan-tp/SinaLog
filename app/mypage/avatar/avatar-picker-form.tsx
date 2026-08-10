@@ -18,7 +18,7 @@ export function AvatarPickerForm({
   const [color, setColor] = useState(initialColor);
   const [isPending, startTransition] = useTransition();
 
-  const svg = AVATAR_ICON_OPTIONS.find((o) => o.key === icon)?.svg ?? "";
+  const Icon = AVATAR_ICON_OPTIONS.find((o) => o.key === icon)?.icon ?? AVATAR_ICON_OPTIONS[0].icon;
 
   function handleSave() {
     startTransition(() => {
@@ -34,17 +34,7 @@ export function AvatarPickerForm({
           className="flex h-[76px] w-[76px] flex-shrink-0 items-center justify-center rounded-full transition-colors"
           style={{ backgroundColor: `${color}1A`, color }}
         >
-          <svg
-            width={36}
-            height={36}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            dangerouslySetInnerHTML={{ __html: svg }}
-          />
+          <Icon size={36} strokeWidth={1.8} />
         </div>
         <div>
           <div className="mb-0.5 text-sm font-bold">{displayName}</div>
@@ -69,17 +59,7 @@ export function AvatarPickerForm({
                 : "border-line-strong text-ink-sub hover:bg-bg"
             }`}
           >
-            <svg
-              width={20}
-              height={20}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              dangerouslySetInnerHTML={{ __html: opt.svg }}
-            />
+            <opt.icon size={20} strokeWidth={1.8} />
           </button>
         ))}
       </div>

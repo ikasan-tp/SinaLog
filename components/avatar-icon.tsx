@@ -16,7 +16,7 @@ export function AvatarIcon({
   size?: number;
 }) {
   const resolvedColor = color || "#7A2430";
-  const svg = icon ? AVATAR_ICON_MAP[icon] : undefined;
+  const Icon = icon ? AVATAR_ICON_MAP[icon] : undefined;
 
   return (
     <div
@@ -29,21 +29,7 @@ export function AvatarIcon({
         fontSize: size * 0.36,
       }}
     >
-      {svg ? (
-        <svg
-          width={size * 0.48}
-          height={size * 0.48}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
-      ) : (
-        (displayName?.slice(0, 1) ?? "?")
-      )}
+      {Icon ? <Icon size={size * 0.48} strokeWidth={1.8} /> : (displayName?.slice(0, 1) ?? "?")}
     </div>
   );
 }

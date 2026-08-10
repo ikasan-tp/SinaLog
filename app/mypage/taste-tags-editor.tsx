@@ -3,13 +3,16 @@
 import { useState, useTransition } from "react";
 import { updateTasteTags } from "./actions";
 import { TagSelect } from "@/components/form-fields";
+import { CollapsibleTagGroup } from "@/components/collapsible-tag-group";
+
+type TagGroup = { title: string; tags: string[] };
 
 export function TasteTagsEditor({
   initialTags,
-  options,
+  tagGroups,
 }: {
   initialTags: string[];
-  options: string[];
+  tagGroups: TagGroup[];
 }) {
   const [tags, setTags] = useState<string[]>(initialTags);
   const [editing, setEditing] = useState(false);
@@ -62,8 +65,25 @@ export function TasteTagsEditor({
 
   return (
     <div>
-      <div className="mb-2 text-xs font-bold text-ink-sub">好きな傾向を選ぶ（複数選択可）</div>
-      <TagSelect options={options} selected={draft} onToggle={(v) => toggle(draft, setDraft, v)} name="tasteTags" />
+      <div className="mb-2 text-xs font-bold text-ink-sub">
+        好きな傾向を選ぶ（複数選択可・カテゴリ名をクリックすると開閉できます）
+      </div>
+      <div className="space-y-2.5">
+        {tagGroups.map((group) => (
+          <CollapsibleTagGroup
+            key={group.title}
+            title={group.title}
+            selectedCount={group.tags.filter((t) => draft.has(t)).length}
+          >
+            <TagSelect
+              options={group.tags}
+              selected={draft}
+              onToggle={(v) => toggle(draft, setDraft, v)}
+              name="tasteTags"
+            />
+          </CollapsibleTagGroup>
+        ))}
+      </div>
       <div className="mt-3 flex gap-2">
         <button
           type="button"
