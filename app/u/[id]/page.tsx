@@ -76,15 +76,13 @@ export default async function PublicProfilePage({ params }: Props) {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold">{profile.display_name}</span>
-                {helpfulTotal > 0 && (
-                  <span
-                    title="レビューが参考になったと押された回数の合計"
-                    className="flex items-center gap-0.5 text-[11px] text-ink-faint"
-                  >
-                    <HelpfulIcon />
-                    {helpfulTotal}
-                  </span>
-                )}
+                <span
+                  title="レビューが参考になったと押された回数の合計"
+                  className="flex items-center gap-0.5 text-[11px] text-ink-faint"
+                >
+                  <HelpfulIcon />
+                  参考になった{helpfulTotal}件
+                </span>
               </div>
               <div className="text-xs text-ink-faint">
                 {joinedYear}年{joinedMonth}月から利用

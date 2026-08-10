@@ -134,12 +134,12 @@ export default function HelpPage() {
               <p className="mb-3.5 text-xs leading-relaxed text-ink-sub">
                 ここに載っていないご質問や、不具合のご報告などがありましたら、お気軽にご連絡ください。
               </p>
-              <a
-                href="mailto:contact@sinalog.example"
+              <Link
+                href="/contact"
                 className="inline-block rounded-md bg-accent px-5 py-2.5 text-[13px] text-white hover:bg-accent-hover"
               >
                 お問い合わせする
-              </a>
+              </Link>
             </div>
           </Section>
         </div>

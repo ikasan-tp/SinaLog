@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
@@ -32,6 +33,15 @@ export default async function AdminReportsPage() {
     <>
       <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+        <div className="mb-5 flex items-center gap-4 text-[13px]">
+          <Link href="/admin/reports" className="font-bold text-accent">
+            通報
+          </Link>
+          <Link href="/admin/contacts" className="text-ink-sub hover:text-accent">
+            お問い合わせ
+          </Link>
+        </div>
+
         <h1 className="mb-1.5 text-xl font-bold">通報の確認</h1>
         <p className="mb-6 text-[13px] text-ink-sub">
           レビューへの通報をここで確認します。判断が済むまで、公開画面には何も表示されません。
