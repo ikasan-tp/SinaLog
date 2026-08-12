@@ -3,6 +3,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { ScenarioForm } from "@/app/scenarios/new/scenario-form";
+import { findPlayTimeRangeKeyByMinutes } from "@/lib/play-time";
 
 export default async function EditScenarioPage({
   params,
@@ -23,7 +24,7 @@ export default async function EditScenarioPage({
   const { data: scenario } = await supabase
     .from("scenarios")
     .select(
-      "id, title, author_name, circle_name, distribution_url, price_text, system_version, setting, recommended_players, play_time, session_formats, has_combat, word_count, description, thumbnail_url, tags, required_supplements, registered_by"
+      "id, title, author_name, circle_name, distribution_url, is_free, price_yen, system_version, setting, recommended_players, play_time_text, play_time_min_minutes, play_time_max_minutes, has_combat, word_count, loss_rate, required_skills, recommended_skills, rollable_skills, discouraged, description, description_is_quoted, thumbnail_url, tags, required_supplements, registered_by"
     )
     .eq("id", id)
     .single();
@@ -48,15 +49,25 @@ export default async function EditScenarioPage({
             authorName: scenario.author_name ?? "",
             circleName: scenario.circle_name ?? "",
             distributionUrl: scenario.distribution_url ?? "",
-            priceText: scenario.price_text ?? "",
+            isFree: scenario.is_free ?? true,
+            priceYen: scenario.price_yen ?? null,
             systemVersion: scenario.system_version ?? "",
             setting: scenario.setting ?? "",
             recommendedPlayers: scenario.recommended_players ?? "",
-            playTime: scenario.play_time ?? "",
-            sessionFormats: scenario.session_formats ?? [],
+            playTimeText: scenario.play_time_text ?? "",
+            playTimeRangeKey: findPlayTimeRangeKeyByMinutes(
+              scenario.play_time_min_minutes,
+              scenario.play_time_max_minutes
+            ),
             hasCombat: scenario.has_combat ?? false,
             wordCount: scenario.word_count ?? null,
+            lossRate: scenario.loss_rate ?? "",
+            requiredSkills: scenario.required_skills ?? "",
+            recommendedSkills: scenario.recommended_skills ?? "",
+            rollableSkills: scenario.rollable_skills ?? "",
+            discouraged: scenario.discouraged ?? "",
             description: scenario.description ?? "",
+            descriptionIsQuoted: scenario.description_is_quoted ?? false,
             thumbnailUrl: scenario.thumbnail_url ?? "",
             tags: scenario.tags ?? [],
             requiredSupplements: scenario.required_supplements ?? [],

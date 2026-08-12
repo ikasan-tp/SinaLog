@@ -37,12 +37,12 @@ export default async function MypagePage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("favorites")
-        .select("scenario_id, note, created_at, scenarios(id, title, system_version, price_text)")
+        .select("scenario_id, note, created_at, scenarios(id, title, system_version, is_free, price_yen)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
       supabase
         .from("scenarios")
-        .select("id, title, system_version, price_text, is_hidden, created_at")
+        .select("id, title, system_version, is_free, price_yen, is_hidden, created_at")
         .eq("registered_by", user.id)
         .order("created_at", { ascending: false }),
       supabase

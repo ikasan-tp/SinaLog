@@ -41,7 +41,7 @@ export default async function PublicProfilePage({ params }: Props) {
       .maybeSingle(),
     supabase
       .from("favorites")
-      .select("scenario_id, note, scenarios(id, title, system_version, price_text)")
+      .select("scenario_id, note, scenarios(id, title, system_version)")
       .eq("user_id", id)
       .order("created_at", { ascending: false })
       .limit(12),

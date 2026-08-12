@@ -5,6 +5,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { FavoriteButton } from "@/components/favorite-button";
 import { ScenarioThumbnail } from "@/components/scenario-thumbnail";
+import { CollapsibleTagGroup } from "@/components/collapsible-tag-group";
 import { createClient } from "@/lib/supabase/server";
 import { ELEMENT_TO_CATEGORY, SENSITIVE_TAGS } from "@/lib/content-taxonomy";
 import { ReviewList } from "./review-list";
@@ -67,7 +68,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
       supabase
         .from("reviews")
         .select(
-          "id, user_id, role, play_format, modification, recommend, good_point, concern_point, spoiler_text, helpful_count, created_at, users(display_name, avatar_icon, avatar_color)"
+          "id, user_id, role, play_format, modification, recommend, good_point, concern_point, spoiler_text, contains_spoiler, helpful_count, created_at, users(display_name, avatar_icon, avatar_color)"
         )
         .eq("scenario_id", id)
         .eq("is_hidden", false)
@@ -200,46 +201,76 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
 
             <div className="mb-6 flex flex-wrap gap-2">
               {scenario.recommended_players && <Pill>推奨PL {scenario.recommended_players}</Pill>}
-              {scenario.play_time && <Pill>プレイ時間 {scenario.play_time}</Pill>}
-              <Pill>価格 {scenario.price_text}</Pill>
+              {scenario.play_time_text && <Pill>プレイ時間 {scenario.play_time_text}</Pill>}
+              <Pill>{scenario.is_free === false ? `価格 ${scenario.price_yen ?? "?"}円` : "価格 無料"}</Pill>
               {scenario.setting && <Pill>{scenario.setting}</Pill>}
-              {(scenario.session_formats ?? []).map((format: string) => (
-                <Pill key={format}>{format}</Pill>
-              ))}
               {scenario.required_supplements?.length === 0 && <Pill>サプリ不要（ルールブックのみ）</Pill>}
             </div>
 
-            {scenario.description && (
-              <p className="mb-6 whitespace-pre-line border-t border-line pt-5 text-sm leading-relaxed">
-                {scenario.description}
-              </p>
-            )}
-
-            {normalTags.length > 0 && (
-              <div className="mb-5 flex flex-wrap gap-1.5">
-                {normalTags.map((tag: string) => (
-                  <span key={tag} className="rounded-full bg-tag-bg px-2.5 py-1 text-[11px] text-tag-ink">
-                    {tag}
-                  </span>
-                ))}
+            {/* 基本情報: プレイ人数・プレイ時間などと並ぶ、シナリオを選ぶ上で重要な情報。タグより優先して常時表示する。 */}
+            {(scenario.loss_rate ||
+              scenario.required_skills ||
+              scenario.recommended_skills ||
+              scenario.rollable_skills ||
+              scenario.discouraged) && (
+              <div className="mb-6 space-y-2 border-t border-line pt-5">
+                {scenario.loss_rate && <BasicInfoRow label="ロスト率" value={scenario.loss_rate} />}
+                {scenario.required_skills && <BasicInfoRow label="必須技能" value={scenario.required_skills} />}
+                {scenario.recommended_skills && (
+                  <BasicInfoRow label="推奨技能" value={scenario.recommended_skills} />
+                )}
+                {scenario.rollable_skills && (
+                  <BasicInfoRow label="振る機会がある技能" value={scenario.rollable_skills} />
+                )}
+                {scenario.discouraged && <BasicInfoRow label="非推奨" value={scenario.discouraged} />}
               </div>
             )}
 
-            {sensitiveTags.length > 0 && (
-              <div className="mb-5 rounded-lg border border-[#D8B98E] bg-[#FBF3E7] p-4">
-                <div className="mb-2.5 text-xs font-medium text-[#8A5A1E]">
-                  センシティブ要素（プレイ前に知っておきたい方向け）
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {sensitiveTags.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="rounded-full border border-[#D8B98E] bg-white px-2.5 py-1 text-[11px] text-[#8A5A1E]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+            {scenario.description && (
+              <div className="mb-6 border-t border-line pt-5">
+                {scenario.description_is_quoted && (
+                  <span className="mb-2 inline-block rounded bg-tag-bg px-2 py-0.5 text-[10.5px] text-tag-ink">
+                    頒布ページより引用
+                  </span>
+                )}
+                <p className="whitespace-pre-line text-sm leading-relaxed">{scenario.description}</p>
+              </div>
+            )}
+
+            {/* タグはネタバレになり得る情報のため、初期状態では隠しておく */}
+            {(normalTags.length > 0 || sensitiveTags.length > 0) && (
+              <div className="mb-5">
+                <CollapsibleTagGroup title="🔒 タグを見る">
+                  <p className="mb-3 text-[11px] text-ink-faint">
+                    タグにはシナリオの内容・構造・展開を推測できる情報が含まれる場合があります。
+                  </p>
+                  {normalTags.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {normalTags.map((tag: string) => (
+                        <span key={tag} className="rounded-full bg-tag-bg px-2.5 py-1 text-[11px] text-tag-ink">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {sensitiveTags.length > 0 && (
+                    <div className="rounded-lg border border-[#D8B98E] bg-[#FBF3E7] p-4">
+                      <div className="mb-2.5 text-xs font-medium text-[#8A5A1E]">
+                        センシティブ要素（プレイ前に知っておきたい方向け）
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sensitiveTags.map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="rounded-full border border-[#D8B98E] bg-white px-2.5 py-1 text-[11px] text-[#8A5A1E]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CollapsibleTagGroup>
               </div>
             )}
 
@@ -351,6 +382,15 @@ function FeatureBadge({ label, value }: { label: string; value: string }) {
     <div className="flex items-baseline gap-2 rounded-md border border-line bg-panel px-3.5 py-2.5 text-[12.5px]">
       <span className="w-[110px] flex-shrink-0 text-ink-faint">{label}</span>
       <span className="font-bold text-accent">{value}</span>
+    </div>
+  );
+}
+
+function BasicInfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3 text-[12.5px]">
+      <span className="w-[130px] flex-shrink-0 text-ink-faint">{label}</span>
+      <span className="text-ink">{value}</span>
     </div>
   );
 }

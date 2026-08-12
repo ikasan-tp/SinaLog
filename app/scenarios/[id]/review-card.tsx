@@ -21,6 +21,7 @@ type ReviewRow = {
   good_point: string;
   concern_point: string | null;
   spoiler_text: string | null;
+  contains_spoiler: boolean;
   helpful_count: number;
   created_at: string;
   isOwnReview: boolean;
@@ -45,6 +46,7 @@ export function ReviewCard({
 }) {
   const router = useRouter();
   const [spoilerOpen, setSpoilerOpen] = useState(false);
+  const [bodyOpen, setBodyOpen] = useState(!review.contains_spoiler);
 
   const [helpfulCount, setHelpfulCount] = useState(review.helpful_count);
   const [voted, setVoted] = useState(review.myVote);
@@ -149,32 +151,58 @@ export function ReviewCard({
         </span>
       </div>
 
-      <p className="text-[13px] leading-relaxed">{review.good_point}</p>
+      {review.contains_spoiler && !bodyOpen ? (
+        <button
+          type="button"
+          onClick={() => setBodyOpen(true)}
+          className="flex w-full items-center justify-between rounded-lg border border-line-strong bg-bg px-4 py-3"
+        >
+          <span className="text-xs text-ink-sub">
+            🔒 このレビューにはネタバレが含まれます（真相・展開に関する記述）
+          </span>
+          <span className="rounded-md border border-line-strong bg-panel px-3.5 py-1.5 text-xs text-accent">
+            表示する
+          </span>
+        </button>
+      ) : (
+        <>
+          {review.contains_spoiler && (
+            <button
+              type="button"
+              onClick={() => setBodyOpen(false)}
+              className="mb-2 text-[11px] text-ink-faint underline hover:text-ink-sub"
+            >
+              ネタバレを含む内容を隠す
+            </button>
+          )}
+          <p className="text-[13px] leading-relaxed">{review.good_point}</p>
 
-      {review.concern_point && (
-        <p className="mt-2 text-[13px] leading-relaxed text-ink-sub">
-          気になった点：{review.concern_point}
-        </p>
-      )}
-
-      {review.spoiler_text && (
-        <div className="mt-2.5 rounded-lg border border-line-strong bg-bg p-4">
-          <button
-            type="button"
-            onClick={() => setSpoilerOpen((v) => !v)}
-            className="flex w-full items-center justify-between"
-          >
-            <span className="text-xs text-ink-sub">ネタバレを含む感想（真相・展開に関する記述）</span>
-            <span className="rounded-md border border-line-strong px-3.5 py-1.5 text-xs text-accent">
-              {spoilerOpen ? "閉じる" : "表示する"}
-            </span>
-          </button>
-          {spoilerOpen && (
-            <p className="mt-3 border-t border-line-strong pt-3 text-[13px] leading-relaxed">
-              {review.spoiler_text}
+          {review.concern_point && (
+            <p className="mt-2 text-[13px] leading-relaxed text-ink-sub">
+              気になった点：{review.concern_point}
             </p>
           )}
-        </div>
+
+          {review.spoiler_text && (
+            <div className="mt-2.5 rounded-lg border border-line-strong bg-bg p-4">
+              <button
+                type="button"
+                onClick={() => setSpoilerOpen((v) => !v)}
+                className="flex w-full items-center justify-between"
+              >
+                <span className="text-xs text-ink-sub">ネタバレを含む感想（真相・展開に関する記述）</span>
+                <span className="rounded-md border border-line-strong px-3.5 py-1.5 text-xs text-accent">
+                  {spoilerOpen ? "閉じる" : "表示する"}
+                </span>
+              </button>
+              {spoilerOpen && (
+                <p className="mt-3 border-t border-line-strong pt-3 text-[13px] leading-relaxed">
+                  {review.spoiler_text}
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

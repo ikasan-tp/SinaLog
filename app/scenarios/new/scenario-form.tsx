@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { createScenario, type CreateScenarioState } from "@/app/scenarios/new/actions";
 import { updateScenario } from "@/app/scenarios/[id]/edit/actions";
-import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS, SESSION_FORMAT_OPTIONS } from "@/lib/content-taxonomy";
+import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS } from "@/lib/content-taxonomy";
+import { PLAY_TIME_RANGES } from "@/lib/play-time";
 import { CollapsibleTagGroup } from "@/components/collapsible-tag-group";
 
 type OgpResult = { title: string; thumbnailUrl: string; description: string };
@@ -14,15 +15,22 @@ export type ScenarioFormInitialValues = {
   authorName: string;
   circleName: string;
   distributionUrl: string;
-  priceText: string;
+  isFree: boolean;
+  priceYen: number | null;
   systemVersion: string;
   setting: string;
   recommendedPlayers: string;
-  playTime: string;
-  sessionFormats: string[];
+  playTimeText: string;
+  playTimeRangeKey: string;
   hasCombat: boolean;
   wordCount: number | null;
+  lossRate: string;
+  requiredSkills: string;
+  recommendedSkills: string;
+  rollableSkills: string;
+  discouraged: string;
   description: string;
+  descriptionIsQuoted: boolean;
   thumbnailUrl: string;
   tags: string[];
   requiredSupplements: string[];
@@ -51,14 +59,10 @@ export function ScenarioForm({
 
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [description, setDescription] = useState(initialValues?.description ?? "");
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(
-    new Set(initialValues?.tags ?? [])
-  );
+  const [isFree, setIsFree] = useState(initialValues?.isFree ?? true);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set(initialValues?.tags ?? []));
   const [selectedSupplements, setSelectedSupplements] = useState<Set<string>>(
     new Set(initialValues?.requiredSupplements ?? [])
-  );
-  const [selectedSessionFormats, setSelectedSessionFormats] = useState<Set<string>>(
-    new Set(initialValues?.sessionFormats ?? [])
   );
 
   async function handleFetchOgp() {
@@ -96,6 +100,8 @@ export function ScenarioForm({
     else next.add(value);
     setSet(next);
   }
+
+  const totalSelectedTags = selectedTags.size;
 
   return (
     <form action={formAction} className="space-y-5">
@@ -209,42 +215,85 @@ export function ScenarioForm({
           </Field>
         </div>
 
+        <Field label="推奨プレイ人数" optional>
+          <select
+            name="recommendedPlayers"
+            defaultValue={initialValues?.recommendedPlayers ?? ""}
+            className={inputClass}
+          >
+            <option value="">不明・未設定</option>
+            {PLAYER_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </Field>
+
         <div className="grid grid-cols-2 gap-4">
-          <Field label="推奨プレイ人数" optional>
+          <Field label="プレイ時間の目安" optional>
+            <input
+              name="playTimeText"
+              defaultValue={initialValues?.playTimeText}
+              placeholder="例：13〜24時間程度、半日程度"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="検索用のプレイ時間帯" optional>
             <select
-              name="recommendedPlayers"
-              defaultValue={initialValues?.recommendedPlayers ?? ""}
+              name="playTimeRangeKey"
+              defaultValue={initialValues?.playTimeRangeKey ?? ""}
               className={inputClass}
             >
               <option value="">不明・未設定</option>
-              {PLAYER_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+              {PLAY_TIME_RANGES.map((r) => (
+                <option key={r.key} value={r.key}>
+                  {r.label}
                 </option>
               ))}
             </select>
-          </Field>
-          <Field label="プレイ時間の目安" optional>
-            <select name="playTime" defaultValue={initialValues?.playTime ?? ""} className={inputClass}>
-              <option value="">不明・未設定</option>
-              <option value="〜2時間">〜2時間</option>
-              <option value="2〜3時間">2〜3時間</option>
-              <option value="4〜6時間">4〜6時間</option>
-              <option value="8時間以上">8時間以上</option>
-            </select>
+            <p className="mt-1.5 text-[11px] text-ink-faint">
+              検索の絞り込みに使われます。上の自由記述と近いものを選んでください。
+            </p>
           </Field>
         </div>
 
-        <Field label="対応セッション形式" optional>
-          <p className="mb-2 text-[11px] text-ink-faint">
-            このシナリオが想定している、または対応しているセッション形式を選んでください。複数選択できます。
-          </p>
-          <TagSelect
-            options={SESSION_FORMAT_OPTIONS}
-            selected={selectedSessionFormats}
-            onToggle={(v) => toggle(selectedSessionFormats, setSelectedSessionFormats, v)}
-            name="sessionFormats"
-          />
+        <Field label="価格" required>
+          <div className="mb-2 flex gap-4 text-[13px]">
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="isFree"
+                value="true"
+                checked={isFree}
+                onChange={() => setIsFree(true)}
+                className="h-4 w-4 accent-accent"
+              />
+              無料
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="isFree"
+                value="false"
+                checked={!isFree}
+                onChange={() => setIsFree(false)}
+                className="h-4 w-4 accent-accent"
+              />
+              有料（投げ銭制も含む）
+            </label>
+          </div>
+          {!isFree && (
+            <input
+              name="priceYen"
+              type="number"
+              min={0}
+              required={!isFree}
+              defaultValue={initialValues?.priceYen ?? undefined}
+              placeholder="例：800"
+              className={inputClass}
+            />
+          )}
         </Field>
 
         <Field label="戦闘要素" optional>
@@ -262,29 +311,68 @@ export function ScenarioForm({
           </p>
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="価格" required>
+        <Field label="シナリオ本文の文字数" optional>
+          <input
+            name="wordCount"
+            type="number"
+            defaultValue={initialValues?.wordCount ?? undefined}
+            placeholder="例：15000（目安で構いません）"
+            className={inputClass}
+          />
+        </Field>
+
+        {/* 概要文中に書かれがちな「基本情報」を独立項目として登録できるようにする */}
+        <div className="mt-1 rounded-lg border border-line-strong p-4">
+          <div className="mb-3 text-[13px] font-medium">
+            基本情報（技能等）<span className="ml-1 text-[11px] font-normal text-ink-faint">（任意）</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="ロスト率の目安" optional>
+              <input
+                name="lossRate"
+                defaultValue={initialValues?.lossRate}
+                placeholder="例：中〜高"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="非推奨（PC傾向・技能等）" optional>
+              <input
+                name="discouraged"
+                defaultValue={initialValues?.discouraged}
+                placeholder="例：低POW"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Field label="必須技能" optional>
             <input
-              name="priceText"
-              required
-              defaultValue={initialValues?.priceText ?? "無料"}
+              name="requiredSkills"
+              defaultValue={initialValues?.requiredSkills}
+              placeholder="例：各HOに準じた戦闘技能"
               className={inputClass}
             />
           </Field>
-          <Field label="シナリオ本文の文字数" optional>
+          <Field label="推奨技能" optional>
             <input
-              name="wordCount"
-              type="number"
-              defaultValue={initialValues?.wordCount ?? undefined}
-              placeholder="例：15000（目安で構いません）"
+              name="recommendedSkills"
+              defaultValue={initialValues?.recommendedSkills}
+              placeholder="例：三大探索技能"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="振る機会がある技能" optional>
+            <input
+              name="rollableSkills"
+              defaultValue={initialValues?.rollableSkills}
+              placeholder="例：コンピューター、ナビゲート、応急手当、歴史、信用、心理学"
               className={inputClass}
             />
           </Field>
         </div>
 
-        <Field label="紹介文" optional>
+        <Field label="シナリオ概要" optional>
           <p className="mb-2 text-[11px] text-ink-faint">
-            空欄のままでも登録できます。頒布ページの説明文を参考に、自分の言葉で書いていただいても構いません。
+            空欄のままでも登録できます。頒布ページのあらすじをそのまま貼り付ける場合は、下の「頒布ページより引用」にチェックしてください。
           </p>
           <textarea
             name="description"
@@ -293,6 +381,15 @@ export function ScenarioForm({
             rows={4}
             className={inputClass}
           />
+          <label className="mt-2 flex items-center gap-2 text-[12px] text-ink-sub">
+            <input
+              type="checkbox"
+              name="descriptionIsQuoted"
+              defaultChecked={initialValues?.descriptionIsQuoted}
+              className="h-3.5 w-3.5 accent-accent"
+            />
+            頒布ページより引用
+          </label>
         </Field>
 
         <Field label="必要サプリメント" optional>
@@ -307,10 +404,8 @@ export function ScenarioForm({
           />
         </Field>
 
-        <div>
-          <label className="mb-2 block text-[13px] font-medium">
-            タグ<span className="ml-1 text-[11px] font-normal text-ink-faint">（任意）</span>
-          </label>
+        {/* タグはネタバレになり得る情報のため、登録時も一段折りたたんでおく */}
+        <CollapsibleTagGroup title="詳細なタグを設定する" selectedCount={totalSelectedTags}>
           <p className="mb-3 text-[11px] text-ink-faint">
             当てはまるものを複数選択できます。検索・絞り込みに使われます。カテゴリ名をクリックすると開閉できます。
           </p>
@@ -330,24 +425,26 @@ export function ScenarioForm({
               </CollapsibleTagGroup>
             ))}
           </div>
-        </div>
 
-        {/* センシティブ要素は「遊んでも大丈夫か」の判断材料になる特別な情報のため、
-            通常タグとは見た目を分けて別枠で選択させる */}
-        <CollapsibleTagGroup
-          title="センシティブ要素（任意）"
-          selectedCount={SENSITIVE_TAGS.filter((t) => selectedTags.has(t)).length}
-          tone="sensitive"
-        >
-          <p className="mb-3 text-[11px] text-[#8A5A1E]">
-            プレイヤーが事前に知っておいたほうがよい要素があれば選んでください。詳細ページでは通常タグと別枠で表示されます。
-          </p>
-          <TagSelect
-            options={SENSITIVE_TAGS}
-            selected={selectedTags}
-            onToggle={(v) => toggle(selectedTags, setSelectedTags, v)}
-            name="tags"
-          />
+          {/* センシティブ要素は「遊んでも大丈夫か」の判断材料になる特別な情報のため、
+              通常タグとは見た目を分けて別枠で選択させる */}
+          <div className="mt-2.5">
+            <CollapsibleTagGroup
+              title="センシティブ要素"
+              selectedCount={SENSITIVE_TAGS.filter((t) => selectedTags.has(t)).length}
+              tone="sensitive"
+            >
+              <p className="mb-3 text-[11px] text-[#8A5A1E]">
+                プレイヤーが事前に知っておいたほうがよい要素があれば選んでください。詳細ページでは通常タグと別枠で表示されます。
+              </p>
+              <TagSelect
+                options={SENSITIVE_TAGS}
+                selected={selectedTags}
+                onToggle={(v) => toggle(selectedTags, setSelectedTags, v)}
+                name="tags"
+              />
+            </CollapsibleTagGroup>
+          </div>
         </CollapsibleTagGroup>
       </section>
 

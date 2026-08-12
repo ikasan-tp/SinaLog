@@ -16,7 +16,7 @@ export default async function NewReviewPage({ params }: Props) {
 
   const { data: scenario } = await supabase
     .from("scenarios")
-    .select("id, title, author_name, has_combat, price_text")
+    .select("id, title, author_name, has_combat, is_free")
     .eq("id", id)
     .single();
 
@@ -26,7 +26,7 @@ export default async function NewReviewPage({ params }: Props) {
     ? await supabase
         .from("reviews")
         .select(
-          "role, play_format, recommend, modification, modification_details, modification_advice, exploration_difficulty, combat_intensity, kp_or_pc_load, replay_intention, group_dependency, session_note, content_warning_adequacy, homage_answer, homage_note, ai_usage_answer, price_fairness, good_point, concern_point, spoiler_text, elements, tags"
+          "role, play_format, recommend, modification, modification_details, modification_advice, exploration_difficulty, combat_intensity, kp_or_pc_load, replay_intention, group_dependency, session_note, content_warning_adequacy, homage_answer, homage_note, ai_usage_answer, price_fairness, good_point, concern_point, spoiler_text, contains_spoiler, elements, tags"
         )
         .eq("scenario_id", id)
         .eq("user_id", user.id)

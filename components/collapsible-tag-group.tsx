@@ -37,7 +37,7 @@ export function CollapsibleTagGroup({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`flex w-full items-center justify-between px-3.5 py-2.5 text-left text-xs font-bold transition-colors ${
+        className={`flex w-full items-center justify-between px-4 py-3 text-left text-xs font-bold transition-colors ${
           isSensitive ? "text-[#8A5A1E] hover:bg-[#F1DFC0]/40" : "text-ink-sub hover:bg-bg"
         }`}
       >
@@ -55,7 +55,7 @@ export function CollapsibleTagGroup({
         </span>
         <ChevronIcon open={open} />
       </button>
-      {open && <div className="border-t px-3.5 py-3 [border-color:inherit]">{children}</div>}
+      {open && <div className="border-t px-4 py-4 [border-color:inherit]">{children}</div>}
     </div>
   );
 }

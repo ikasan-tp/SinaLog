@@ -63,6 +63,7 @@ export async function createReview(
       good_point: goodPoint,
       concern_point: getOrNull("concernPoint"),
       spoiler_text: getOrNull("spoilerText"),
+      contains_spoiler: formData.get("containsSpoiler") === "on",
 
       elements: formData.getAll("elements") as string[],
       tags: formData.getAll("tags") as string[],

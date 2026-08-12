@@ -11,7 +11,7 @@ type Scenario = {
   title: string;
   author_name: string | null;
   has_combat: boolean;
-  price_text: string;
+  is_free: boolean;
 };
 
 type ExistingReview = {
@@ -35,6 +35,7 @@ type ExistingReview = {
   good_point: string;
   concern_point: string | null;
   spoiler_text: string | null;
+  contains_spoiler: boolean;
   elements: string[] | null;
   tags: string[] | null;
 };
@@ -74,7 +75,7 @@ export function ReviewForm({
   const [replay, setReplay] = useState(existingReview?.replay_intention ?? "yes");
   const [priceFairness, setPriceFairness] = useState(existingReview?.price_fairness ?? "fair");
 
-  const isPaid = scenario.price_text !== "無料";
+  const isPaid = scenario.is_free === false;
   const isEdit = !!existingReview;
 
   const toggle = (set: Set<string>, setSet: (s: Set<string>) => void, value: string) => {
@@ -385,6 +386,23 @@ export function ReviewForm({
           rows={4}
           className={inputClass}
         />
+      </Section>
+
+      {/* ネタバレフラグ */}
+      <Section
+        title="ネタバレへの配慮"
+        optional
+        desc="「良かった点」「気になった点」の中に、シナリオの真相・展開に関する記述が含まれる場合はチェックしてください。チェックすると、レビュー一覧では内容が初期非表示になります。"
+      >
+        <label className="flex items-center gap-2.5 text-[13px]">
+          <input
+            type="checkbox"
+            name="containsSpoiler"
+            defaultChecked={existingReview?.contains_spoiler}
+            className="h-4 w-4 accent-accent"
+          />
+          このレビューにはネタバレを含む
+        </label>
       </Section>
 
       {/* ネタバレ */}

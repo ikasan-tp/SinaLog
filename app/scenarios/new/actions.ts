@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { extractScenarioFields, validateScenarioFields } from "@/lib/scenario-fields";
 
 export type CreateScenarioState = {
   error?: string;
@@ -25,38 +26,14 @@ export async function createScenario(
     redirect("/login?next=/scenarios/new");
   }
 
-  const title = (formData.get("title") as string)?.trim();
-  const distributionUrl = (formData.get("distributionUrl") as string)?.trim();
-  const priceText = (formData.get("priceText") as string)?.trim();
-
-  if (!title || !distributionUrl || !priceText) {
-    return { error: "タイトル・価格・頒布元は必須です。" };
-  }
-
-  const tags = formData.getAll("tags") as string[];
-  const requiredSupplements = formData.getAll("requiredSupplements") as string[];
-  const sessionFormats = formData.getAll("sessionFormats") as string[];
-  const wordCountRaw = formData.get("wordCount") as string;
+  const fields = extractScenarioFields(formData);
+  const validationError = validateScenarioFields(fields);
+  if (validationError) return { error: validationError };
 
   const { data, error } = await supabase
     .from("scenarios")
     .insert({
-      title,
-      distribution_url: distributionUrl,
-      price_text: priceText,
-      author_name: (formData.get("authorName") as string) || null,
-      circle_name: (formData.get("circleName") as string) || null,
-      system_version: (formData.get("systemVersion") as string) || null,
-      setting: (formData.get("setting") as string) || null,
-      recommended_players: (formData.get("recommendedPlayers") as string) || null,
-      play_time: (formData.get("playTime") as string) || null,
-      session_formats: sessionFormats,
-      has_combat: formData.get("hasCombat") === "on",
-      word_count: wordCountRaw ? parseInt(wordCountRaw, 10) || null : null,
-      description: (formData.get("description") as string) || null,
-      thumbnail_url: (formData.get("thumbnailUrl") as string) || null,
-      tags,
-      required_supplements: requiredSupplements,
+      ...fields,
       registered_by: user.id,
     })
     .select("id")

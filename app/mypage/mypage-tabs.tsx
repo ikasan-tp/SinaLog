@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { deleteMyReview, deleteMyScenario, removeFavorite, updateFavoriteNote } from "./actions";
+import { priceLabel } from "@/lib/price";
 
 type ReviewRow = {
   id: string;
@@ -18,14 +19,21 @@ type FavoriteRow = {
   scenario_id: string;
   note: string | null;
   created_at: string;
-  scenarios: { id: string; title: string; system_version: string | null; price_text: string } | null;
+  scenarios: {
+    id: string;
+    title: string;
+    system_version: string | null;
+    is_free: boolean | null;
+    price_yen: number | null;
+  } | null;
 };
 
 type ScenarioRow = {
   id: string;
   title: string;
   system_version: string | null;
-  price_text: string;
+  is_free: boolean | null;
+  price_yen: number | null;
   is_hidden: boolean;
   created_at: string;
   reviewCount: number;
@@ -324,7 +332,7 @@ function ScenarioRowItem({ scenario }: { scenario: ScenarioRow }) {
           </Link>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-ink-faint">
             {scenario.system_version && <span>{scenario.system_version}</span>}
-            <span>{scenario.price_text}</span>
+            <span>{priceLabel(scenario.is_free, scenario.price_yen)}</span>
             <span>レビュー{scenario.reviewCount}件</span>
             {scenario.is_hidden && <span className="text-accent">非公開中</span>}
           </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { ScenarioThumbnail } from "@/components/scenario-thumbnail";
-import { SearchForm } from "@/components/search-form";
+import { priceLabel as formatPriceLabel } from "@/lib/price";
 import { createClient } from "@/lib/supabase/server";
 
 type ScenarioCardData = {
@@ -11,17 +11,33 @@ type ScenarioCardData = {
   description: string | null;
   system_version: string | null;
   recommended_players: string | null;
-  play_time: string | null;
-  price_text: string;
+  play_time_text: string | null;
+  is_free: boolean | null;
+  price_yen: number | null;
   author_name: string | null;
   thumbnail_url: string | null;
 };
 
+const scenarioColumns =
+  "id, title, description, system_version, recommended_players, play_time_text, is_free, price_yen, author_name, thumbnail_url";
+
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const scenarioColumns =
-    "id, title, description, system_version, recommended_players, play_time, price_text, author_name, thumbnail_url";
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // ログイン中で「好きな傾向」タグが設定されていれば、そのタグと重なるシナリオを「あなたにおすすめ」として出す
+  let tasteTags: string[] = [];
+  if (user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("taste_tags")
+      .eq("id", user.id)
+      .maybeSingle();
+    tasteTags = profile?.taste_tags ?? [];
+  }
 
   const [{ data: newScenarios }, { data: statsRows }, { count: scenarioCount }, { count: reviewCount }] =
     await Promise.all([
@@ -52,6 +68,17 @@ export default async function HomePage() {
     .map((id) => (popularScenariosRaw ?? []).find((s) => s.id === id))
     .filter((s): s is ScenarioCardData => !!s);
 
+  const { data: recommendedForYou } =
+    tasteTags.length > 0
+      ? await supabase
+          .from("scenarios")
+          .select(scenarioColumns)
+          .eq("is_hidden", false)
+          .overlaps("tags", tasteTags)
+          .order("created_at", { ascending: false })
+          .limit(8)
+      : { data: [] as ScenarioCardData[] };
+
   return (
     <>
       <Header />
@@ -70,8 +97,6 @@ export default async function HomePage() {
             <br />
             シナリオへの評価だけでなく、良いレビューを書いてくれた人にもきちんと光が当たる場所を目指しています。
           </p>
-
-          <SearchForm className="mx-auto mb-6 flex max-w-md" />
 
           <div className="flex justify-center gap-6 text-[12px] text-ink-faint">
             <span>
@@ -103,6 +128,20 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {(recommendedForYou?.length ?? 0) > 0 && (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-bold">あなたにおすすめ</h2>
+              <span className="text-[11px] text-ink-faint">好きな傾向タグをもとに表示</span>
+            </div>
+            <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {(recommendedForYou ?? []).map((scenario) => (
+                <ScenarioCard key={scenario.id} scenario={scenario} />
+              ))}
+            </div>
+          </>
+        )}
+
         {popularScenarios.length > 0 && (
           <>
             <div className="mb-4 flex items-center justify-between">
@@ -124,24 +163,21 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {(newScenarios ?? []).map((scenario) => (
-            <ScenarioCard key={scenario.id} scenario={scenario} />
-          ))}
-
-          {(newScenarios?.length ?? 0) === 0 && (
-            <Link
-              href="/scenarios/new"
-              className="flex min-h-[220px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong bg-bg p-5 text-center text-ink-faint hover:border-accent hover:bg-panel"
-            >
-              <span className="text-2xl leading-none">+</span>
-              <span className="text-[13px] font-bold text-ink-sub">シナリオを登録する</span>
-              <span className="text-pretty text-[11.5px] leading-relaxed">
-                まだ登録されているシナリオは多くありません。あなたの一本を追加してみませんか？
-              </span>
+        {(newScenarios?.length ?? 0) === 0 ? (
+          <div className="rounded-xl border border-dashed border-line-strong bg-bg p-8 text-center text-pretty text-[13px] text-ink-faint">
+            まだ登録されているシナリオは多くありません。
+            <Link href="/scenarios/new" className="text-accent underline">
+              あなたの一本を登録する
             </Link>
-          )}
-        </div>
+            と、ここに表示されます。
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {(newScenarios ?? []).map((scenario) => (
+              <ScenarioCard key={scenario.id} scenario={scenario} />
+            ))}
+          </div>
+        )}
       </main>
 
       <Footer />
@@ -150,6 +186,7 @@ export default async function HomePage() {
 }
 
 function ScenarioCard({ scenario }: { scenario: ScenarioCardData }) {
+  const priceLabel = formatPriceLabel(scenario.is_free, scenario.price_yen);
   return (
     <Link
       href={`/scenarios/${scenario.id}`}
@@ -169,8 +206,8 @@ function ScenarioCard({ scenario }: { scenario: ScenarioCardData }) {
         )}
         <div className="flex gap-2.5 text-[11px] text-ink-faint">
           {scenario.recommended_players && <span>PL {scenario.recommended_players}</span>}
-          {scenario.play_time && <span>{scenario.play_time}</span>}
-          <span>{scenario.price_text}</span>
+          {scenario.play_time_text && <span>{scenario.play_time_text}</span>}
+          <span>{priceLabel}</span>
         </div>
       </div>
     </Link>

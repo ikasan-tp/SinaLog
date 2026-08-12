@@ -2,20 +2,20 @@ import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
-import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS, SESSION_FORMAT_OPTIONS } from "@/lib/content-taxonomy";
+import { TAG_GROUPS, SENSITIVE_TAGS, SUPPLEMENTS, PLAYER_OPTIONS } from "@/lib/content-taxonomy";
+import { PLAY_TIME_RANGES, findPlayTimeRange } from "@/lib/play-time";
 import { ScenarioThumbnail } from "@/components/scenario-thumbnail";
+import { priceLabel as formatPriceLabel } from "@/lib/price";
 import { SearchFiltersForm } from "./search-filters-form";
 import { SortSelect as SortSelectClient, SORT_OPTIONS } from "./sort-select";
 
 const PAGE_SIZE = 20;
 
 const SYSTEM_OPTIONS = ["クトゥルフ神話TRPG", "新クトゥルフ神話TRPG"];
-const PLAYTIME_OPTIONS = ["〜2時間", "2〜3時間", "4〜6時間", "8時間以上"];
 const PRICE_OPTIONS = [
   { key: "free", label: "無料" },
   { key: "paid", label: "有料" },
 ];
-const PLAYTIME_ORDER = ["〜2時間", "2〜3時間", "4〜6時間", "8時間以上"];
 
 type SearchParams = {
   q?: string;
@@ -23,7 +23,6 @@ type SearchParams = {
   supplement?: string | string[];
   players?: string | string[];
   playtime?: string | string[];
-  format?: string | string[];
   price?: string | string[];
   tag?: string | string[];
   sensitive?: string | string[];
@@ -47,7 +46,6 @@ export default async function SearchPage({
   const supplements = toArray(sp.supplement);
   const players = toArray(sp.players);
   const playtimes = toArray(sp.playtime);
-  const formats = toArray(sp.format);
   const prices = toArray(sp.price);
   const tags = toArray(sp.tag);
   const sensitive = toArray(sp.sensitive);
@@ -59,7 +57,7 @@ export default async function SearchPage({
   let query = supabase
     .from("scenarios")
     .select(
-      "id, title, author_name, circle_name, system_version, recommended_players, play_time, session_formats, price_text, description, thumbnail_url, required_supplements, tags, created_at"
+      "id, title, author_name, circle_name, system_version, recommended_players, play_time_text, play_time_min_minutes, play_time_max_minutes, is_free, price_yen, description, thumbnail_url, required_supplements, tags, created_at"
     )
     .eq("is_hidden", false);
 
@@ -71,15 +69,21 @@ export default async function SearchPage({
   }
   if (systems.length > 0) query = query.in("system_version", systems);
   if (players.length > 0) query = query.in("recommended_players", players);
-  if (playtimes.length > 0) query = query.in("play_time", playtimes);
-  if (formats.length > 0) query = query.overlaps("session_formats", formats);
   if (supplements.length > 0) query = query.overlaps("required_supplements", supplements);
   if (tags.length > 0) query = query.overlaps("tags", tags);
   if (sensitive.length > 0) query = query.overlaps("tags", sensitive);
   if (prices.includes("free") && !prices.includes("paid")) {
-    query = query.eq("price_text", "無料");
+    query = query.eq("is_free", true);
   } else if (prices.includes("paid") && !prices.includes("free")) {
-    query = query.neq("price_text", "無料");
+    query = query.eq("is_free", false);
+  }
+  // プレイ時間: 登録フォームも同じレンジ一覧から選ぶ設計のため、
+  // min分の値が一致するかどうかで判定できる(範囲の重なり判定は不要)。
+  if (playtimes.length > 0) {
+    const mins = playtimes
+      .map((key) => findPlayTimeRange(key)?.min)
+      .filter((m): m is number => m !== undefined);
+    if (mins.length > 0) query = query.in("play_time_min_minutes", mins);
   }
 
   const { data: scenarios, error } = await query.limit(300);
@@ -105,7 +109,7 @@ export default async function SearchPage({
       case "reviews":
         return b.reviewCount - a.reviewCount;
       case "short":
-        return playtimeRank(a.play_time) - playtimeRank(b.play_time);
+        return (a.play_time_min_minutes ?? 99999) - (b.play_time_min_minutes ?? 99999);
       case "recommend":
       default:
         // レビューが無いものは評価順の末尾に。件数が少なすぎる推薦率のブレは許容する簡易実装。
@@ -127,7 +131,6 @@ export default async function SearchPage({
     supplements,
     players,
     playtimes,
-    formats,
     prices,
     tags,
     sensitive,
@@ -164,7 +167,7 @@ export default async function SearchPage({
           </div>
         )}
 
-        <div className="grid items-start gap-7 lg:grid-cols-[220px_1fr]">
+        <div className="grid items-start gap-8 lg:grid-cols-[240px_1fr]">
           <SearchFiltersForm
             q={q}
             systemOptions={SYSTEM_OPTIONS}
@@ -173,10 +176,8 @@ export default async function SearchPage({
             selectedSupplements={supplements}
             playerOptions={PLAYER_OPTIONS}
             selectedPlayers={players}
-            playtimeOptions={PLAYTIME_OPTIONS}
+            playtimeOptions={PLAY_TIME_RANGES}
             selectedPlaytimes={playtimes}
-            formatOptions={SESSION_FORMAT_OPTIONS}
-            selectedFormats={formats}
             priceOptions={PRICE_OPTIONS}
             selectedPrices={prices}
             tagGroups={TAG_GROUPS}
@@ -220,12 +221,6 @@ export default async function SearchPage({
   );
 }
 
-function playtimeRank(playTime: string | null) {
-  if (!playTime) return PLAYTIME_ORDER.length;
-  const idx = PLAYTIME_ORDER.indexOf(playTime);
-  return idx === -1 ? PLAYTIME_ORDER.length : idx;
-}
-
 type ResultScenario = {
   id: string;
   title: string;
@@ -233,8 +228,9 @@ type ResultScenario = {
   circle_name: string | null;
   system_version: string | null;
   recommended_players: string | null;
-  play_time: string | null;
-  price_text: string;
+  play_time_text: string | null;
+  is_free: boolean | null;
+  price_yen: number | null;
   description: string | null;
   thumbnail_url: string | null;
   reviewCount: number;
@@ -242,6 +238,7 @@ type ResultScenario = {
 };
 
 function ResultCard({ scenario }: { scenario: ResultScenario }) {
+  const priceLabel = formatPriceLabel(scenario.is_free, scenario.price_yen);
   return (
     <Link
       href={`/scenarios/${scenario.id}`}
@@ -269,10 +266,10 @@ function ResultCard({ scenario }: { scenario: ResultScenario }) {
           {scenario.recommended_players && (
             <span className="rounded bg-tag-bg px-2 py-0.5 text-tag-ink">PL {scenario.recommended_players}</span>
           )}
-          {scenario.play_time && (
-            <span className="rounded bg-tag-bg px-2 py-0.5 text-tag-ink">{scenario.play_time}</span>
+          {scenario.play_time_text && (
+            <span className="rounded bg-tag-bg px-2 py-0.5 text-tag-ink">{scenario.play_time_text}</span>
           )}
-          <span className="rounded bg-tag-bg px-2 py-0.5 text-tag-ink">{scenario.price_text}</span>
+          <span className="rounded bg-tag-bg px-2 py-0.5 text-tag-ink">{priceLabel}</span>
         </div>
         <div className="flex justify-between text-[11px] text-ink-faint">
           <span>{scenario.circle_name || scenario.author_name || "作者不明"}</span>
@@ -348,7 +345,6 @@ function buildActiveFilterChips({
   supplements,
   players,
   playtimes,
-  formats,
   prices,
   tags,
   sensitive,
@@ -358,7 +354,6 @@ function buildActiveFilterChips({
   supplements: string[];
   players: string[];
   playtimes: string[];
-  formats: string[];
   prices: string[];
   tags: string[];
   sensitive: string[];
@@ -371,7 +366,6 @@ function buildActiveFilterChips({
     supplement: supplements,
     players,
     playtime: playtimes,
-    format: formats,
     price: prices,
     tag: tags,
     sensitive,
@@ -386,8 +380,7 @@ function buildActiveFilterChips({
   pushChips("system", systems, (v) => v);
   pushChips("supplement", supplements, (v) => v);
   pushChips("players", players, (v) => v);
-  pushChips("playtime", playtimes, (v) => v);
-  pushChips("format", formats, (v) => v);
+  pushChips("playtime", playtimes, (v) => findPlayTimeRange(v)?.label ?? v);
   pushChips("price", prices, (v) => (v === "free" ? "無料" : "有料"));
   pushChips("tag", tags, (v) => v);
   pushChips("sensitive", sensitive, (v) => v);
