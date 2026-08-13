@@ -39,24 +39,33 @@ export default async function HomePage() {
     tasteTags = profile?.taste_tags ?? [];
   }
 
-  const [{ data: newScenarios }, { data: statsRows }, { count: scenarioCount }, { count: reviewCount }] =
-    await Promise.all([
-      supabase
-        .from("scenarios")
-        .select(scenarioColumns)
-        .eq("is_hidden", false)
-        .order("created_at", { ascending: false })
-        .limit(8),
-      // 人気シナリオ: おすすめ率が高い順(scenario_statsビュー。レビュー3件以上のみ対象にして偏りを抑える)
-      supabase
-        .from("scenario_stats")
-        .select("scenario_id, recommend_pct, review_count")
-        .gte("review_count", 3)
-        .order("recommend_pct", { ascending: false })
-        .limit(8),
-      supabase.from("scenarios").select("id", { count: "exact", head: true }).eq("is_hidden", false),
-      supabase.from("reviews").select("id", { count: "exact", head: true }).eq("is_hidden", false),
-    ]);
+  const [
+    { data: newScenarios, error: newScenariosError },
+    { data: statsRows },
+    { count: scenarioCount },
+    { count: reviewCount },
+  ] = await Promise.all([
+    supabase
+      .from("scenarios")
+      .select(scenarioColumns)
+      .eq("is_hidden", false)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    // 人気シナリオ: おすすめ率が高い順(scenario_statsビュー)
+    supabase
+      .from("scenario_stats")
+      .select("scenario_id, recommend_pct, review_count")
+      .order("recommend_pct", { ascending: false })
+      .limit(8),
+    supabase.from("scenarios").select("id", { count: "exact", head: true }).eq("is_hidden", false),
+    supabase.from("reviews").select("id", { count: "exact", head: true }).eq("is_hidden", false),
+  ]);
+
+  // シナリオ一覧の取得に失敗した場合(未適用のマイグレーションで列が無い等)、
+  // 件数カウントだけ成功して一覧が0件に見える、という分かりにくい状態を避けるためログに残す。
+  if (newScenariosError) {
+    console.error("トップページ: シナリオ一覧の取得に失敗しました。マイグレーションが最新か確認してください。", newScenariosError);
+  }
 
   const popularIds = (statsRows ?? []).map((s) => s.scenario_id);
   const { data: popularScenariosRaw } =
@@ -68,36 +77,34 @@ export default async function HomePage() {
     .map((id) => (popularScenariosRaw ?? []).find((s) => s.id === id))
     .filter((s): s is ScenarioCardData => !!s);
 
-  const { data: recommendedForYou } =
-    tasteTags.length > 0
-      ? await supabase
-          .from("scenarios")
-          .select(scenarioColumns)
-          .eq("is_hidden", false)
-          .overlaps("tags", tasteTags)
-          .order("created_at", { ascending: false })
-          .limit(8)
-      : { data: [] as ScenarioCardData[] };
+  const hasTasteTags = tasteTags.length > 0;
+  const { data: recommendedForYouRaw } = hasTasteTags
+    ? await supabase
+        .from("scenarios")
+        .select(scenarioColumns)
+        .eq("is_hidden", false)
+        .overlaps("tags", tasteTags)
+        .order("created_at", { ascending: false })
+        .limit(8)
+    : { data: null };
+  // 好きな傾向タグが未設定、または一致するシナリオが無い場合は、新着シナリオで埋めておく
+  // (「あなたにおすすめ」欄を常に表示するための代替表示)
+  const recommendedForYou =
+    recommendedForYouRaw && recommendedForYouRaw.length > 0 ? recommendedForYouRaw : newScenarios ?? [];
 
   return (
     <>
       <Header />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
-        {/* ブランディング・用途説明。SNSでの引用やスクリーンショットにもここが写る想定。 */}
-        <section className="mb-8 rounded-xl border border-line bg-panel px-7 py-9 text-center">
-          <p className="mb-2 text-[11.5px] font-medium tracking-wide text-ink-faint">
-            クトゥルフ神話TRPGシナリオ専門のレビューサイト
-          </p>
-          <h1 className="mb-3 text-2xl font-bold">
+        {/* ヒーロー */}
+        <section className="mb-6 rounded-xl border border-line bg-panel px-7 py-8 text-center">
+          <h1 className="mb-2 text-2xl font-bold">
             Sina<span className="text-accent">Log</span>
           </h1>
-          <p className="mx-auto mb-6 max-w-xl text-pretty text-[13px] leading-relaxed text-ink-sub">
-            実際に遊んだ探索者たちの声で、次に遊ぶ一本を選べる場所。
-            <br />
-            シナリオへの評価だけでなく、良いレビューを書いてくれた人にもきちんと光が当たる場所を目指しています。
+          <p className="mb-4 text-[12.5px] text-ink-sub">
+            クトゥルフ神話TRPGシナリオのレビューサイト。実際に遊んだ人の声で、次に遊ぶ一本を選べます。
           </p>
-
           <div className="flex justify-center gap-6 text-[12px] text-ink-faint">
             <span>
               登録シナリオ <strong className="text-ink">{scenarioCount ?? 0}</strong>本
@@ -108,53 +115,35 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* SinaLogについて・ご利用にあたって */}
-        <section className="mb-10 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-line bg-panel p-6">
-            <h2 className="mb-2 text-sm font-bold">SinaLogについて</h2>
-            <p className="text-pretty text-[12.5px] leading-relaxed text-ink-sub">
-              クトゥルフ神話TRPG・新クトゥルフ神話TRPGの同人シナリオを対象としたレビューサイトです。実際にシナリオを遊んだ方のレビューをもとに、シナリオ選びの参考になる情報を掲載しています。
-            </p>
-          </div>
-          <div className="rounded-xl border border-line bg-panel p-6">
-            <h2 className="mb-2 text-sm font-bold">ご利用にあたって</h2>
-            <p className="text-pretty text-[12.5px] leading-relaxed text-ink-sub">
-              サイトの性質上、シナリオの内容に関するネタバレが含まれる場合があります。あらかじめご了承のうえご利用ください。また、当サイトは掲載内容の正確性を保証するものではありません。誤りや問題を見つけた場合は
-              <Link href="/contact" className="text-link underline">
-                お問い合わせフォーム
-              </Link>
-              よりお知らせください。
-            </p>
-          </div>
-        </section>
+        {/* SinaLogについて・ご利用にあたって: レビュー一覧の妨げにならないよう控えめな1行にまとめる */}
+        <p className="mb-10 text-pretty text-center text-[11px] leading-relaxed text-ink-faint">
+          クトゥルフ神話TRPG・新クトゥルフ神話TRPGの同人シナリオを対象にした非公式ファンサイトです。ネタバレを含む場合があります。掲載内容の正確性は保証していません。誤りは
+          <Link href="/contact" className="underline hover:text-ink-sub">
+            お問い合わせフォーム
+          </Link>
+          へ。詳しくは
+          <Link href="/help" className="underline hover:text-ink-sub">
+            ヘルプ
+          </Link>
+          をご覧ください。
+        </p>
 
-        {(recommendedForYou?.length ?? 0) > 0 && (
-          <>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold">あなたにおすすめ</h2>
-              <span className="text-[11px] text-ink-faint">好きな傾向タグをもとに表示</span>
-            </div>
-            <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {(recommendedForYou ?? []).map((scenario) => (
-                <ScenarioCard key={scenario.id} scenario={scenario} />
-              ))}
-            </div>
-          </>
-        )}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold">あなたにおすすめ</h2>
+          <span className="text-[11px] text-ink-faint">
+            {hasTasteTags ? "好きな傾向タグをもとに表示" : "新着シナリオを表示中"}
+          </span>
+        </div>
+        <ScenarioSection scenarios={recommendedForYou} emptyMessage="登録されているシナリオはありません" />
 
-        {popularScenarios.length > 0 && (
-          <>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-bold">人気シナリオ</h2>
-              <span className="text-[11px] text-ink-faint">レビュー3件以上・おすすめ率順</span>
-            </div>
-            <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {popularScenarios.map((scenario) => (
-                <ScenarioCard key={scenario.id} scenario={scenario} />
-              ))}
-            </div>
-          </>
-        )}
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-bold">人気シナリオ</h2>
+          <span className="text-[11px] text-ink-faint">おすすめ率順</span>
+        </div>
+        <ScenarioSection
+          scenarios={popularScenarios}
+          emptyMessage="まだレビューが投稿されたシナリオがありません"
+        />
 
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-bold">新着シナリオ</h2>
@@ -162,26 +151,34 @@ export default async function HomePage() {
             シナリオをもっと探す
           </Link>
         </div>
-
-        {(newScenarios?.length ?? 0) === 0 ? (
-          <div className="rounded-xl border border-dashed border-line-strong bg-bg p-8 text-center text-pretty text-[13px] text-ink-faint">
-            まだ登録されているシナリオは多くありません。
-            <Link href="/scenarios/new" className="text-accent underline">
-              あなたの一本を登録する
-            </Link>
-            と、ここに表示されます。
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {(newScenarios ?? []).map((scenario) => (
-              <ScenarioCard key={scenario.id} scenario={scenario} />
-            ))}
-          </div>
-        )}
+        <ScenarioSection scenarios={newScenarios ?? []} emptyMessage="登録されているシナリオはありません" />
       </main>
 
       <Footer />
     </>
+  );
+}
+
+function ScenarioSection({
+  scenarios,
+  emptyMessage,
+}: {
+  scenarios: ScenarioCardData[];
+  emptyMessage: string;
+}) {
+  if (scenarios.length === 0) {
+    return (
+      <div className="mb-10 rounded-xl border border-dashed border-line-strong bg-bg p-8 text-center text-[13px] text-ink-faint">
+        {emptyMessage}
+      </div>
+    );
+  }
+  return (
+    <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {scenarios.map((scenario) => (
+        <ScenarioCard key={scenario.id} scenario={scenario} />
+      ))}
+    </div>
   );
 }
 
