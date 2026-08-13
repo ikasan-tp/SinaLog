@@ -17,6 +17,7 @@ type Scenario = {
 type ExistingReview = {
   role: string;
   play_format: string;
+  group_recruitment: string | null;
   recommend: boolean;
   modification: string;
   modification_details: string[] | null;
@@ -54,6 +55,7 @@ export function ReviewForm({
 
   const [role, setRole] = useState(existingReview?.role ?? "pl");
   const [playFormat, setPlayFormat] = useState(existingReview?.play_format ?? "text");
+  const [groupRecruitment, setGroupRecruitment] = useState(existingReview?.group_recruitment ?? "");
   const [recommend, setRecommend] = useState(existingReview?.recommend === false ? "no" : "yes");
   const [modification, setModification] = useState(existingReview?.modification ?? "none");
   const [modDetails, setModDetails] = useState<Set<string>>(
@@ -124,6 +126,20 @@ export function ReviewForm({
             { value: "text", label: "テキセ", sub: "テキストチャット中心" },
             { value: "voice", label: "ボイセ", sub: "音声通話中心" },
             { value: "inperson", label: "対面" },
+          ]}
+        />
+      </Section>
+
+      {/* 参加時の募集形態 */}
+      <Section title="参加時の募集形態" optional desc="どのように参加者が集まったセッションだったかを選んでください。">
+        <ChoiceSelect
+          name="groupRecruitment"
+          value={groupRecruitment}
+          onChange={setGroupRecruitment}
+          options={[
+            { value: "friends", label: "身内・知り合い", sub: "既に知っている人同士で開催した" },
+            { value: "pickup", label: "野良募集", sub: "SNS等で参加者を募集して集まった" },
+            { value: "unknown", label: "その他・わからない" },
           ]}
         />
       </Section>

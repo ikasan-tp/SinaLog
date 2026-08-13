@@ -31,10 +31,6 @@ export default async function EditScenarioPage({
 
   if (!scenario) notFound();
 
-  if (scenario.registered_by !== user.id) {
-    redirect(`/scenarios/${id}`);
-  }
-
   return (
     <>
       <Header />

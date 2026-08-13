@@ -38,6 +38,7 @@ export async function createReview(
       user_id: user?.id ?? null,
       role,
       play_format: playFormat,
+      group_recruitment: getOrNull("groupRecruitment"),
       recommend: recommend === "yes",
 
       modification: getOrNull("modification") ?? "none",

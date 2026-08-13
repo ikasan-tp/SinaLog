@@ -165,7 +165,7 @@ export function ScenarioForm({
       <section className="rounded-xl border border-line bg-panel p-7">
         <h2 className="mb-1 text-[15px] font-bold">シナリオ情報</h2>
         <p className="mb-4 text-xs text-ink-faint">
-          タイトル・価格・頒布元以外は空欄のまま登録できます。詳細が分からない場合は無理に埋めなくて大丈夫です（登録後、内容の修正は登録した本人のみ行えます）。
+          タイトル・価格・頒布元以外は空欄のまま登録できます。詳細が分からない場合は無理に埋めなくて大丈夫です（登録後、内容はログイン済みの他の利用者も編集できます）。
         </p>
 
         <input type="hidden" name="thumbnailUrl" value={ogp?.thumbnailUrl ?? ""} />

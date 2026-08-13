@@ -8,9 +8,8 @@ import type { CreateScenarioState } from "../../new/actions";
 
 /**
  * シナリオ情報の更新。
- * RLS側で「登録者本人のみ更新可能」に制限されているため、
- * 他人のシナリオを更新しようとした場合は0件更新のまま静かに失敗する
- * (エラーとしては返らないが、実害は無い＝更新されないだけ)。
+ * ログイン済みの利用者であれば、登録者本人でなくても更新できる
+ * (Wiki的な共同編集。0020マイグレーション参照)。
  */
 export async function updateScenario(
   scenarioId: string,
@@ -34,8 +33,7 @@ export async function updateScenario(
   const { error } = await supabase
     .from("scenarios")
     .update(fields)
-    .eq("id", scenarioId)
-    .eq("registered_by", user.id);
+    .eq("id", scenarioId);
 
   if (error) {
     console.error("updateScenario error:", error);

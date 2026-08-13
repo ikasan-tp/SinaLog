@@ -10,12 +10,14 @@ import { reportReview, type ReportReviewState } from "./report-actions";
 const ROLE_LABEL: Record<string, string> = { pl: "PLとして参加", kp: "KPとして進行" };
 const MOD_LABEL: Record<string, string> = { none: "原文通り", partial: "一部改変", major: "大幅に改変" };
 const FORMAT_LABEL: Record<string, string> = { text: "テキセ", voice: "ボイセ", inperson: "対面" };
+const RECRUITMENT_LABEL: Record<string, string> = { friends: "身内・知り合い", pickup: "野良募集" };
 
 type ReviewRow = {
   id: string;
   user_id: string | null;
   role: string;
   play_format: string;
+  group_recruitment: string | null;
   modification: string;
   recommend: boolean;
   good_point: string;
@@ -146,6 +148,11 @@ export function ReviewCard({
         <span className="rounded bg-tag-bg px-2 py-0.5 text-[10px] text-tag-ink">
           {FORMAT_LABEL[review.play_format]}
         </span>
+        {review.group_recruitment && RECRUITMENT_LABEL[review.group_recruitment] && (
+          <span className="rounded bg-tag-bg px-2 py-0.5 text-[10px] text-tag-ink">
+            {RECRUITMENT_LABEL[review.group_recruitment]}
+          </span>
+        )}
         <span className="rounded bg-tag-bg px-2 py-0.5 text-[10px] text-tag-ink">
           {MOD_LABEL[review.modification]}
         </span>

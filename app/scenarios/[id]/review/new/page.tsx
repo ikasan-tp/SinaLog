@@ -26,7 +26,7 @@ export default async function NewReviewPage({ params }: Props) {
     ? await supabase
         .from("reviews")
         .select(
-          "role, play_format, recommend, modification, modification_details, modification_advice, exploration_difficulty, combat_intensity, kp_or_pc_load, replay_intention, group_dependency, session_note, content_warning_adequacy, homage_answer, homage_note, ai_usage_answer, price_fairness, good_point, concern_point, spoiler_text, contains_spoiler, elements, tags"
+          "role, play_format, group_recruitment, recommend, modification, modification_details, modification_advice, exploration_difficulty, combat_intensity, kp_or_pc_load, replay_intention, group_dependency, session_note, content_warning_adequacy, homage_answer, homage_note, ai_usage_answer, price_fairness, good_point, concern_point, spoiler_text, contains_spoiler, elements, tags"
         )
         .eq("scenario_id", id)
         .eq("user_id", user.id)

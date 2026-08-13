@@ -68,7 +68,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
       supabase
         .from("reviews")
         .select(
-          "id, user_id, role, play_format, modification, recommend, good_point, concern_point, spoiler_text, contains_spoiler, helpful_count, created_at, users(display_name, avatar_icon, avatar_color)"
+          "id, user_id, role, play_format, group_recruitment, modification, recommend, good_point, concern_point, spoiler_text, contains_spoiler, helpful_count, created_at, users(display_name, avatar_icon, avatar_color)"
         )
         .eq("scenario_id", id)
         .eq("is_hidden", false)
@@ -141,7 +141,6 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
     isFavorited = !!favorite;
     hasOwnReview = !!ownReview;
   }
-  const isOwner = user?.id === scenario.registered_by;
 
   const reviewCount = stats?.review_count ?? 0;
   const recommendPct = stats?.recommend_pct ?? null;
@@ -181,7 +180,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
               <h1 className="text-2xl font-bold">{scenario.title}</h1>
               <div className="flex flex-shrink-0 gap-2">
                 <FavoriteButton scenarioId={scenario.id} isLoggedIn={!!user} initialFavorited={isFavorited} />
-                {isOwner && (
+                {user && (
                   <Link
                     href={`/scenarios/${scenario.id}/edit`}
                     className="flex items-center rounded-md border border-line-strong px-4 py-2 text-xs text-ink-sub hover:bg-bg"
