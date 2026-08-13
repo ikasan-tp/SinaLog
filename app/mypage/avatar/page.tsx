@@ -35,7 +35,7 @@ export default async function AvatarPickerPage() {
         </p>
 
         <AvatarPickerForm
-          displayName={profile?.display_name ?? "名無しの探索者"}
+          displayName={profile?.display_name ?? "ユーザー"}
           initialIcon={profile?.avatar_icon ?? "cat"}
           initialColor={profile?.avatar_color ?? "#2E6B6B"}
         />

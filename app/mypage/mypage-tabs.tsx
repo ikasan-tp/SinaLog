@@ -98,7 +98,7 @@ function ReviewsPanel({ reviews }: { reviews: ReviewRow[] }) {
   if (reviews.length === 0) {
     return (
       <EmptyState>
-        まだレビューを投稿していません。気に入ったシナリオがあれば、感想を書いてみませんか？
+        まだレビューを投稿していません。
       </EmptyState>
     );
   }
@@ -286,7 +286,7 @@ function ScenariosPanel({ scenarios }: { scenarios: ScenarioRow[] }) {
   if (scenarios.length === 0) {
     return (
       <EmptyState>
-        まだ登録したシナリオがありません。遊んだシナリオがサイトに無ければ、あなたが最初の登録者になれます。
+        まだ登録したシナリオがありません。
       </EmptyState>
     );
   }

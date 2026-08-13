@@ -104,7 +104,7 @@ export function ReviewCard({
   }
 
   const date = new Date(review.created_at).toLocaleDateString("ja-JP");
-  const displayName = review.user_id ? review.users?.display_name ?? "名無しの探索者" : "匿名さん";
+  const displayName = review.user_id ? review.users?.display_name ?? "ユーザー" : "匿名さん";
   const avatarColor = review.user_id ? review.users?.avatar_color ?? "#7A2430" : "#6B675E";
 
   const authorInfo = (
