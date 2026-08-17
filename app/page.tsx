@@ -115,9 +115,13 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* SinaLogについて・ご利用にあたって: レビュー一覧の妨げにならないよう控えめな1行にまとめる */}
-        <p className="mb-10 text-pretty text-center text-[11px] leading-relaxed text-ink-faint">
-          クトゥルフ神話TRPG・新クトゥルフ神話TRPGの同人シナリオを対象にした非公式ファンサイトです。ネタバレを含む場合があります。掲載内容の正確性は保証していません。誤りは
+        {/* SinaLogについて・ご利用にあたって: レビュー一覧の妨げにならないよう控えめな3行にまとめる */}
+        <p className="mb-10 text-center text-[11px] leading-relaxed text-ink-faint">
+          クトゥルフ神話TRPG・新クトゥルフ神話TRPGの同人シナリオを対象にした非公式ファンサイトです。
+          <br />
+          ネタバレを含む場合があります。掲載内容の正確性は保証していません。
+          <br />
+          お問い合わせは
           <Link href="/contact" className="underline hover:text-ink-sub">
             お問い合わせフォーム
           </Link>
