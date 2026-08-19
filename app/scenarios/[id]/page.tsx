@@ -219,7 +219,7 @@ export default async function ScenarioDetailPage({ params, searchParams }: Props
                   <BasicInfoRow label="推奨技能" value={scenario.recommended_skills} />
                 )}
                 {scenario.rollable_skills && (
-                  <BasicInfoRow label="振る機会がある技能" value={scenario.rollable_skills} />
+                  <BasicInfoRow label="準推奨技能" value={scenario.rollable_skills} />
                 )}
                 {scenario.discouraged && <BasicInfoRow label="非推奨" value={scenario.discouraged} />}
               </div>

@@ -189,7 +189,7 @@ export function ScenarioForm({
             <input
               name="circleName"
               defaultValue={initialValues?.circleName}
-              placeholder="個人制作の場合は空欄で構いません"
+              placeholder="無ければ空欄で構いません"
               className={inputClass}
             />
           </Field>
@@ -327,7 +327,7 @@ export function ScenarioForm({
             基本情報（技能等）<span className="ml-1 text-[11px] font-normal text-ink-faint">（任意）</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="ロスト率の目安" optional>
+            <Field label="ロスト率" optional>
               <input
                 name="lossRate"
                 defaultValue={initialValues?.lossRate}
@@ -343,54 +343,55 @@ export function ScenarioForm({
                 className={inputClass}
               />
             </Field>
+            <Field label="必須技能" optional>
+              <input
+                name="requiredSkills"
+                defaultValue={initialValues?.requiredSkills}
+                placeholder="例：各HOに準じた戦闘技能"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="推奨技能" optional>
+              <input
+                name="recommendedSkills"
+                defaultValue={initialValues?.recommendedSkills}
+                placeholder="例：三大探索技能"
+                className={inputClass}
+              />
+            </Field>
+            <Field label="準推奨技能" optional>
+              <input
+                name="rollableSkills"
+                defaultValue={initialValues?.rollableSkills}
+                className={inputClass}
+              />
+            </Field>
           </div>
-          <Field label="必須技能" optional>
-            <input
-              name="requiredSkills"
-              defaultValue={initialValues?.requiredSkills}
-              placeholder="例：各HOに準じた戦闘技能"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="推奨技能" optional>
-            <input
-              name="recommendedSkills"
-              defaultValue={initialValues?.recommendedSkills}
-              placeholder="例：三大探索技能"
-              className={inputClass}
-            />
-          </Field>
-          <Field label="振る機会がある技能" optional>
-            <input
-              name="rollableSkills"
-              defaultValue={initialValues?.rollableSkills}
-              placeholder="例：コンピューター、ナビゲート、応急手当、歴史、信用、心理学"
-              className={inputClass}
-            />
-          </Field>
         </div>
 
-        <Field label="シナリオ概要" optional>
-          <p className="mb-2 text-[11px] text-ink-faint">
-            空欄のままでも登録できます。頒布ページのあらすじをそのまま貼り付ける場合は、下の「頒布ページより引用」にチェックしてください。
-          </p>
-          <textarea
-            name="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className={inputClass}
-          />
-          <label className="mt-2 flex items-center gap-2 text-[12px] text-ink-sub">
-            <input
-              type="checkbox"
-              name="descriptionIsQuoted"
-              defaultChecked={initialValues?.descriptionIsQuoted}
-              className="h-3.5 w-3.5 accent-accent"
+        <div className="mt-6">
+          <Field label="シナリオ概要" optional>
+            <p className="mb-2 text-[11px] text-ink-faint">
+              空欄のままでも登録できます。頒布ページのあらすじをそのまま貼り付ける場合は、下の「頒布ページより引用」にチェックしてください。
+            </p>
+            <textarea
+              name="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className={inputClass}
             />
-            頒布ページより引用
-          </label>
-        </Field>
+            <label className="mt-2 flex items-center gap-2 text-[12px] text-ink-sub">
+              <input
+                type="checkbox"
+                name="descriptionIsQuoted"
+                defaultChecked={initialValues?.descriptionIsQuoted}
+                className="h-3.5 w-3.5 accent-accent"
+              />
+              頒布ページより引用
+            </label>
+          </Field>
+        </div>
 
         <Field label="必要サプリメント" optional>
           <p className="mb-2 text-[11px] text-ink-faint">
